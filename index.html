@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-3 py-2.5 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-2">
             <h1 class="text-base font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO</h1>
-            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v16.0 Anti-Spam</span>
+            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v17.0 Live Winrate</span>
         </div>
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -90,7 +90,7 @@
                 </div>
             </div>
 
-            <!-- Настроение рынка и Статистика -->
+            <!-- Настроение рынка и Живая статистика побед/поражений -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div class="bg-slate-900 p-2.5 rounded-xl cyber-border flex flex-col justify-between">
                     <div class="flex justify-between items-center mb-1 text-[11px]">
@@ -102,13 +102,16 @@
                         <div id="sellBar" class="bg-rose-500 h-full transition-all duration-500" style="width: 32%"></div>
                     </div>
                 </div>
-                <div class="bg-slate-900 p-2.5 rounded-xl cyber-border flex items-center justify-between">
-                    <div>
-                        <span class="text-[10px] text-slate-400 block">Статистика (Winrate)</span>
-                        <span id="winrateStats" class="text-xs font-bold text-cyan-400">Всего: 0 | Успех: 0%</span>
+                
+                <!-- Живая шкала Winrate (зеленый/красный мониторинг) -->
+                <div class="bg-slate-900 p-2.5 rounded-xl cyber-border flex flex-col justify-between">
+                    <div class="flex justify-between items-center text-[11px] mb-1">
+                        <span class="text-slate-400">Мониторинг точности (Winrate)</span>
+                        <span id="winrateStats" class="font-bold text-cyan-400">Побед: 0 | Поражений: 0 (0%)</span>
                     </div>
-                    <div class="bg-cyan-950/80 border border-cyan-800 text-cyan-300 px-2 py-1 rounded text-[11px] font-bold">
-                        AI: <span id="accuracyVal">99.4%</span>
+                    <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                        <div id="winBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 100%"></div>
+                        <div id="lossBar" class="bg-rose-500 h-full transition-all duration-500" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -227,8 +230,8 @@
                         <div class="text-emerald-400 font-bold mb-1">🟢 СИГНАЛ: CALL (ВВЕРХ)</div>
                         <div class="text-slate-300 text-[10px] mb-1">Причина: Пересечение MA 9/21 снизу вверх + RSI</div>
                         <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
+                            <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание результата...</span>
                             <span>Уверенность: 99%</span>
-                            <span class="text-amber-400 font-semibold">💎 ЖЕЛЕЗНЫЙ</span>
                         </div>
                         <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
                     </div>
@@ -253,10 +256,11 @@
         let volumeData = [120, 200, 150, 320, 280, 410, 190, 340, 290, 450];
         let labels = ['12:00', '12:01', '12:02', '12:03', '12:04', '12:05', '12:06', '12:07', '12:08', '12:09'];
         
-        let totalSignals = 0;
-        let successfulSignals = 0;
+        let winsCount = 0;
+        let lossesCount = 0;
+        let activeSignalsToVerify = []; // Массив активных сигналов для проверки на следующей свече
         let lastTrendIsCall = true;
-        let lastSignalTimes = {}; // Антиспам-фильтр: хранит время последнего сигнала по каждой паре
+        let lastSignalTimes = {};
 
         function playBeep() {
             try {
@@ -368,6 +372,9 @@
                 labels.shift();
             }
 
+            // ПОВЕРКА ИСТОРИИ СИГНАЛОВ ПО НОВОМУ ТИККУ (Симуляция закрытия свечи)
+            verifyActiveSignals(newPrice);
+
             document.getElementById('currentPriceLabel').textContent = newPrice;
             chart.update();
             volumeChart.update();
@@ -379,8 +386,40 @@
             document.getElementById('sentimentText').textContent = `${buyPerc}% BUY / ${sellPerc}% SELL`;
 
             if (isRunning && Math.random() > 0.65) {
-                generateSignal();
+                generateSignal(newPrice);
             }
+        }
+
+        function verifyActiveSignals(currentPrice) {
+            // Проверяем все открытые на проверку сигналы
+            activeSignalsToVerify.forEach(sig => {
+                if (!sig.verified) {
+                    // Сравниваем цену входа и текущую цену
+                    const isWin = sig.isCall ? (currentPrice > sig.entryPrice) : (currentPrice < sig.entryPrice);
+                    
+                    if (isWin) {
+                        winsCount++;
+                        sig.element.querySelector('.status-badge').innerHTML = '✅ <span class="text-emerald-400 font-bold">ПЛЮС (+WIN)</span>';
+                    } else {
+                        lossesCount++;
+                        sig.element.querySelector('.status-badge').innerHTML = '❌ <span class="text-rose-400 font-bold">МИНУС (-LOSS)</span>';
+                    }
+                    sig.verified = true;
+                }
+            });
+
+            // Очищаем старые проверенные сигналы из массива проверки
+            activeSignalsToVerify = activeSignalsToVerify.filter(sig => !sig.verified);
+
+            // Обновляем статистику Winrate и шкалу
+            const total = winsCount + lossesCount;
+            const winrate = total > 0 ? Math.round((winsCount / total) * 100) : 100;
+            const winWidth = total > 0 ? Math.round((winsCount / total) * 100) : 100;
+            const lossWidth = 100 - winWidth;
+
+            document.getElementById('winrateStats').textContent = `Побед: ${winsCount} | Поражений: ${lossesCount} (${winrate}%)`;
+            document.getElementById('winBar').style.width = winWidth + '%';
+            document.getElementById('lossBar').style.width = lossWidth + '%';
         }
 
         document.getElementById('assetSelect').addEventListener('change', function() {
@@ -410,7 +449,7 @@
             }
         });
 
-        function generateSignal() {
+        function generateSignal(currentPrice) {
             const scanMode = document.getElementById('scanModeSelect').value;
             let pair;
 
@@ -426,10 +465,10 @@
                 pair = pairs[Math.floor(Math.random() * pairs.length)];
             }
 
-            // АНТИСПАМ-ФИЛЬТР: проверяем, давали ли мы сигнал по этой паре за последние 15 секунд
+            // Антиспам (пауза 15 сек на пару)
             const nowTime = Date.now();
             if (lastSignalTimes[pair] && (nowTime - lastSignalTimes[pair] < 15000)) {
-                return; // Пропускаем генерацию, чтобы не спамить одну и ту же пару
+                return;
             }
             lastSignalTimes[pair] = nowTime;
 
@@ -462,11 +501,6 @@
             }
             playBeep();
 
-            totalSignals++;
-            if (confidence > 97) successfulSignals++;
-            const winrate = Math.round((successfulSignals / totalSignals) * 100) || 99;
-            document.getElementById('winrateStats').textContent = `Всего: ${totalSignals} | Успех: ${winrate}%`;
-
             const feed = document.getElementById('signalsFeed');
             const card = document.createElement('div');
             card.className = 'p-2.5 bg-slate-800/80 rounded-lg border border-cyan-500/30 text-xs animate-pulse';
@@ -481,8 +515,8 @@
                 </div>
                 <div class="text-slate-300 text-[10px] mb-1">Причина: ${reason}</div>
                 <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
+                    <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание результата...</span>
                     <span>Уверенность: ${confidence}%</span>
-                    <span class="text-amber-400 font-semibold">💎 ЖЕЛЕЗНЫЙ</span>
                 </div>
                 <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
             `;
@@ -492,6 +526,14 @@
             if (feed.children.length > 10) {
                 feed.removeChild(feed.lastChild);
             }
+
+            // Добавляем сигнал в массив для проверки результатов по следующей свече
+            activeSignalsToVerify.push({
+                element: card,
+                entryPrice: currentPrice,
+                isCall: isCall,
+                verified: false
+            });
 
             document.getElementById('signalCount').textContent = `${feed.children.length} сигналов`;
         }
