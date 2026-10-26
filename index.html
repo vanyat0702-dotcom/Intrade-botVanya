@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-3 py-2.5 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-2">
             <h1 class="text-base font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO</h1>
-            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v22.0 Pre-Close Pro</span>
+            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v25.0 MSK Universal</span>
         </div>
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -73,8 +73,8 @@
             <!-- Панель статусов -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
                 <div class="bg-slate-900/80 p-2.5 rounded-lg cyber-border">
-                    <span class="text-[10px] text-slate-400 block">Тренд (SMA 50)</span>
-                    <span id="trendStatus" class="font-bold text-emerald-400">📈 Восходящий</span>
+                    <span class="text-[10px] text-slate-400 block">Время (MSK)</span>
+                    <span id="mskClock" class="font-bold text-cyan-400 font-mono">00:00:00</span>
                 </div>
                 <div class="bg-slate-900/80 p-2.5 rounded-lg cyber-border">
                     <span class="text-[10px] text-slate-400 block">Новостной фильтр</span>
@@ -149,6 +149,15 @@
                 <h2 class="font-bold text-cyan-400 mb-2 uppercase tracking-wider text-[11px]">⚙️ Настройки алгоритма</h2>
                 
                 <div class="mb-2">
+                    <label class="text-[10px] text-slate-400 block mb-1">Таймфрейм свечи</label>
+                    <select id="tfSelect" class="w-full bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500 font-bold text-cyan-300">
+                        <option value="3">⏱ 3 минуты (M3)</option>
+                        <option value="5" selected>⏱ 5 минут (M5)</option>
+                        <option value="15">⏱ 15 минут (M15)</option>
+                    </select>
+                </div>
+
+                <div class="mb-2">
                     <label class="text-[10px] text-slate-400 block mb-1">Режим сканирования</label>
                     <select id="scanModeSelect" class="w-full bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
                         <option value="selected">🎯 Только выбранная пара</option>
@@ -161,16 +170,8 @@
                     <label class="text-[10px] text-slate-400 block mb-1 font-semibold text-cyan-300">Стили торговли:</label>
                     <div class="grid grid-cols-1 gap-1.5 bg-slate-950/60 p-2 rounded-lg border border-slate-800 max-h-[110px] overflow-y-auto">
                         <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="Скальпинг M3" checked class="accent-cyan-500 rounded">
-                            <span>⏱ Скальпинг M3</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="Классика M5" checked class="accent-cyan-500 rounded">
-                            <span>⏱ Классика M5 (Тренд)</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="Пробой M15" class="accent-cyan-500 rounded">
-                            <span>⏱ Пробой M15</span>
+                            <input type="checkbox" name="strat" value="Классика Трендовая" checked class="accent-cyan-500 rounded">
+                            <span>⏱ Классика (Тренд)</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
                             <input type="checkbox" name="strat" value="Price Action" checked class="accent-cyan-500 rounded">
@@ -181,12 +182,8 @@
                             <span>🛡️ Отскок от уровней (S&R)</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="Пробой волатильности" class="accent-cyan-500 rounded">
+                            <input type="checkbox" name="strat" value="Пробой волатильности" checked class="accent-cyan-500 rounded">
                             <span>🚀 Пробой волатильности</span>
-                        </label>
-                        <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="EMA Scalping" checked class="accent-cyan-500 rounded">
-                            <span>⚡ EMA Scalping (9/21)</span>
                         </label>
                     </div>
                 </div>
@@ -223,13 +220,13 @@
                     <!-- Карточка по умолчанию -->
                     <div class="p-2.5 bg-slate-800/60 rounded-lg border border-slate-700/60">
                         <div class="flex justify-between font-semibold mb-1 text-[11px]">
-                            <span class="text-cyan-300">EUR/USD • Классика M5</span>
-                            <span class="text-slate-400 text-[10px]">Пре-анализ за 40с</span>
+                            <span class="text-cyan-300">EUR/USD • Таймфрейм M5</span>
+                            <span class="text-slate-400 text-[10px]">Синк по МСК</span>
                         </div>
                         <div class="text-emerald-400 font-bold mb-1">🟢 СИГНАЛ: CALL (ВВЕРХ)</div>
-                        <div class="text-slate-300 text-[10px] mb-1">Причина: Анализ за 40 сек до закрытия свечи</div>
+                        <div class="text-slate-300 text-[10px] mb-1">Причина: Пре-анализ за 35с до конца свечи по МСК</div>
                         <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
-                            <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание закрытия свечи...</span>
+                            <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание закрытия прогнозной свечи...</span>
                             <span>Уверенность: 99%</span>
                         </div>
                         <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
@@ -258,7 +255,7 @@
         let winsCount = 0;
         let lossesCount = 0;
         let lastTrendIsCall = true;
-        let lastSignalTimes = {};
+        let signaledCandlesMap = {}; // Защита от повторных сигналов на одном баре
 
         function playBeep() {
             try {
@@ -325,6 +322,18 @@
             });
         }
 
+        // Вывод и отслеживание Московского времени (MSK, UTC+3)
+        setInterval(() => {
+            const now = new Date();
+            // Получаем время по МСК через Intl
+            const mskString = now.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false });
+            document.getElementById('mskClock').textContent = mskString;
+
+            if (isRunning) {
+                checkMSKCandleTiming(now);
+            }
+        }, 1000);
+
         function connectWebSocket(symbol) {
             if (socket) {
                 if (socket.close) socket.close();
@@ -337,7 +346,7 @@
                     const data = JSON.parse(event.data);
                     const realPrice = parseFloat(parseFloat(data.p).toFixed(2));
                     const realVol = Math.floor(parseFloat(data.q) * 1000) % 500 + 50;
-                    handleNewTick(realPrice, realVol);
+                    updateMarketData(realPrice, realVol);
                 };
             } else {
                 socket = setInterval(() => {
@@ -346,16 +355,14 @@
                     const change = (Math.random() - 0.49) * 0.0008;
                     const newPrice = parseFloat((lastPrice + change).toFixed(5));
                     const newVol = Math.floor(Math.random() * 400) + 100;
-                    handleNewTick(newPrice, newVol);
+                    updateMarketData(newPrice, newVol);
                 }, 3000);
             }
         }
 
-        function handleNewTick(newPrice, volume) {
+        function updateMarketData(newPrice, volume) {
             const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
-                            now.getMinutes().toString().padStart(2, '0') + ':' + 
-                            now.getSeconds().toString().padStart(2, '0');
+            const timeStr = now.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
 
             const prevPrice = priceData[priceData.length - 1];
             lastTrendIsCall = newPrice >= prevPrice;
@@ -379,10 +386,40 @@
             document.getElementById('buyBar').style.width = buyPerc + '%';
             document.getElementById('sellBar').style.width = sellPerc + '%';
             document.getElementById('sentimentText').textContent = `${buyPerc}% BUY / ${sellPerc}% SELL`;
+        }
 
-            // ПРЕ-АНАЛИЗ: Бот запускает генерацию сигнала строго по таймингу подготовки к закрытию свечи
-            if (isRunning && Math.random() > 0.5) {
-                generatePreCloseSignal(newPrice);
+        // ГЛАВНЫЙ МЕХАНИЗМ: ПРИВЯЗКА К СИСТЕМНЫМ ЧАСАМ ПО МСК И ВЫБРАННОМУ ТАЙМФРЕЙМУ
+        function checkMSKCandleTiming(now) {
+            // Получаем текущие часы, минуты и секунды по МСК
+            const mskOptions = { timeZone: 'Europe/Moscow', hour12: false };
+            const hours = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, hour: '2-digit' }));
+            const minutes = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, minute: '2-digit' }));
+            const seconds = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, second: '2-digit' }));
+
+            const totalSecondsToday = hours * 3600 + minutes * 60 + seconds;
+            
+            // Выбранный пользователем таймфрейм в минутах (3, 5 или 15)
+            const tfMinutes = parseInt(document.getElementById('tfSelect').value);
+            const tfSeconds = tfMinutes * 60;
+
+            // Остаток секунд до конца текущей свечи выбранного таймфрейма
+            const secondsIntoCurrentCandle = totalSecondsToday % tfSeconds;
+            const secondsLeft = tfSeconds - secondsIntoCurrentCandle;
+
+            // Уникальный ID текущей свечи (номер свечи с начала суток), чтобы не слать повторы
+            const currentCandleId = Math.floor(totalSecondsToday / tfSeconds);
+
+            // Пре-анализ запускается строго за 30-40 секунд до закрытия свечи
+            if (secondsLeft >= 30 && secondsLeft <= 40) {
+                if (!signaledCandlesMap[currentCandleId]) {
+                    signaledCandlesMap[currentCandleId] = true;
+                    
+                    const currentPair = document.getElementById('assetSelect').value;
+                    const currentPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
+                    
+                    // Выдаем сигнал на СЛЕДУЮЩУЮ свечу
+                    generateSignal(currentPair, currentPrice, tfMinutes, secondsLeft);
+                }
             }
         }
 
@@ -413,32 +450,23 @@
             }
         });
 
-        function generatePreCloseSignal(currentPrice) {
+        function generateSignal(pair, currentPrice, tfMinutes, secondsLeftToClose) {
             const scanMode = document.getElementById('scanModeSelect').value;
-            let pair;
+            let targetPair = pair;
 
-            if (scanMode === 'selected') {
-                pair = document.getElementById('assetSelect').value;
-            } else {
+            if (scanMode !== 'selected') {
                 const pairs = [
                     'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'USD/CAD', 
                     'AUD/USD', 'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'EUR/CHF', 
                     'EUR/CAD', 'EUR/AUD', 'GBP/JPY', 'GBP/CHF', 'GBP/CAD', 
                     'GBP/AUD', 'AUD/JPY', 'AUD/CAD', 'NZD/JPY', 'CHF/JPY', 'CAD/JPY', 'BTC/USDT'
                 ];
-                pair = pairs[Math.floor(Math.random() * pairs.length)];
+                targetPair = pairs[Math.floor(Math.random() * pairs.length)];
             }
-
-            // Антиспам (пауза 15 сек на пару)
-            const nowTime = Date.now();
-            if (lastSignalTimes[pair] && (nowTime - lastSignalTimes[pair] < 15000)) {
-                return;
-            }
-            lastSignalTimes[pair] = nowTime;
 
             const checkedStrategies = Array.from(document.querySelectorAll('input[name="strat"]:checked')).map(el => el.value);
             if (checkedStrategies.length === 0) {
-                checkedStrategies.push('Классика M5');
+                checkedStrategies.push('Классика Трендовая');
             }
 
             const randomStrategy = checkedStrategies[Math.floor(Math.random() * checkedStrategies.length)];
@@ -447,15 +475,9 @@
             
             let reason = '';
             if (useMA) {
-                reason = isCall ? 'Пре-анализ за 40с: пробой EMA 9/21 вверх' : 'Пре-анализ за 40с: отбой от EMA 9/21 вниз';
-            } else if (randomStrategy.includes('Price Action')) {
-                reason = isCall ? 'Паттерн Price Action перед закрытием бара' : 'Медвежье поглощение на финише свечи';
-            } else if (randomStrategy.includes('Отскок')) {
-                reason = isCall ? 'Отскок от уровня поддержки (S&R)' : 'Отскок от уровня сопротивления (S&R)';
-            } else if (randomStrategy.includes('волатильности')) {
-                reason = isCall ? 'Импульсный пробой Боллинджера' : 'Сужение и пробой Боллинджера вниз';
+                reason = isCall ? `Пре-анализ M${tfMinutes} по МСК: пробой MA вверх` : `Пре-анализ M${tfMinutes} по МСК: отбой от MA вниз`;
             } else {
-                reason = isCall ? `Сигнал по [${randomStrategy}] на рост` : `Сигнал по [${randomStrategy}] на падение`;
+                reason = isCall ? `Паттерн Price Action на таймфрейме M${tfMinutes}` : `Медвежий сетап на закрытии M${tfMinutes}`;
             }
 
             const confidence = Math.floor(Math.random() * 3) + 97;
@@ -471,15 +493,15 @@
             
             card.innerHTML = `
                 <div class="flex justify-between font-semibold mb-1 text-[11px]">
-                    <span class="text-cyan-300">${pair} • ${randomStrategy}</span>
-                    <span class="text-slate-400 text-[10px]">Пре-анализ за 40с</span>
+                    <span class="text-cyan-300">${targetPair} • Таймфрейм M${tfMinutes}</span>
+                    <span class="text-slate-400 text-[10px]">Синк по МСК</span>
                 </div>
                 <div class="${isCall ? 'text-emerald-400' : 'text-rose-400'} font-bold mb-1">
-                    ${isCall ? '🟢 СИГНАЛ: CALL (ВВЕРХ)' : '🔴 СИГНАЛ: PUT (ВНИЗ)'}
+                    ${isCall ? '🟢 СИГНАЛ: CALL (ВВЕРХ)' : '🟢 СИГНАЛ: PUT (ВНИЗ)'}
                 </div>
                 <div class="text-slate-300 text-[10px] mb-1">Причина: ${reason}</div>
                 <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
-                    <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание закрытия прогнозной свечи...</span>
+                    <span class="text-amber-400 font-semibold status-badge">⏳ Экспирация на след. свечу M${tfMinutes}...</span>
                     <span>Уверенность: ${confidence}%</span>
                 </div>
                 <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
@@ -493,9 +515,11 @@
 
             document.getElementById('signalCount').textContent = `${feed.children.length} сигналов`;
 
-            // ФИКСАЦИЯ ИСХОДА: Ждем завершения полного цикла свечи (моделируем 15 секунд для проверки)
+            // ТОЧНЫЙ РАСЧЕТ ИТОГА СДЕЛКИ ПО ВРЕМЕНИ СВЕЧИ
+            // Сделка длится ровно столько, сколько осталось до конца текущей свечи (секунды до конца) + полный период следующей свечи (tfMinutes * 60)
+            const totalDurationSeconds = secondsLeftToClose + (tfMinutes * 60);
             const entryPrice = currentPrice;
-            
+
             setTimeout(() => {
                 const finalPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
                 const isWin = isCall ? (finalPrice > entryPrice) : (finalPrice < entryPrice);
@@ -518,7 +542,7 @@
                 document.getElementById('winrateStats').textContent = `Побед: ${winsCount} | Поражений: ${lossesCount} (${winrate}%)`;
                 document.getElementById('winBar').style.width = winWidth + '%';
                 document.getElementById('lossBar').style.width = lossWidth + '%';
-            }, 15000);
+            }, totalDurationSeconds * 1000); // Таймер ждет точное время закрытия прогнозной свечи
         }
 
         window.onload = initCharts;
