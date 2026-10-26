@@ -35,7 +35,25 @@
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-sm rounded px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
                 <option value="EUR/USD">EUR/USD (Forex)</option>
                 <option value="GBP/USD">GBP/USD (Forex)</option>
-                <option value="BTC/USDT">BTC/USDT (Crypto)</option>
+                <option value="USD/JPY">USD/JPY (Forex)</option>
+                <option value="USD/CHF">USD/CHF (Forex)</option>
+                <option value="USD/CAD">USD/CAD (Forex)</option>
+                <option value="AUD/USD">AUD/USD (Forex)</option>
+                <option value="NZD/USD">NZD/USD (Forex)</option>
+                <option value="EUR/GBP">EUR/GBP (Forex)</option>
+                <option value="EUR/JPY">EUR/JPY (Forex)</option>
+                <option value="EUR/CHF">EUR/CHF (Forex)</option>
+                <option value="EUR/CAD">EUR/CAD (Forex)</option>
+                <option value="EUR/AUD">EUR/AUD (Forex)</option>
+                <option value="GBP/JPY">GBP/JPY (Forex)</option>
+                <option value="GBP/CHF">GBP/CHF (Forex)</option>
+                <option value="GBP/CAD">GBP/CAD (Forex)</option>
+                <option value="GBP/AUD">GBP/AUD (Forex)</option>
+                <option value="AUD/JPY">AUD/JPY (Forex)</option>
+                <option value="AUD/CAD">AUD/CAD (Forex)</option>
+                <option value="NZD/JPY">NZD/JPY (Forex)</option>
+                <option value="CHF/JPY">CHF/JPY (Forex)</option>
+                <option value="CAD/JPY">CAD/JPY (Forex)</option>
             </select>
             <select id="timeframeSelect" class="bg-slate-800 text-slate-200 text-sm rounded px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
                 <option value="1m">M1 (1 минута)</option>
@@ -220,6 +238,11 @@
             });
         }
 
+        // Синхронизация названия пары на графике при выборе в выпадающем списке
+        document.getElementById('assetSelect').addEventListener('change', function() {
+            document.getElementById('currentPairLabel').textContent = this.value;
+        });
+
         // Симуляция живого рынка и генерация сигналов
         document.getElementById('toggleBotBtn').addEventListener('click', function() {
             isRunning = !isRunning;
@@ -273,7 +296,12 @@
         }
 
         function generateSignal() {
-            const pairs = ['EUR/USD', 'GBP/USD', 'BTC/USDT'];
+            const pairs = [
+                'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'USD/CAD', 
+                'AUD/USD', 'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'EUR/CHF', 
+                'EUR/CAD', 'EUR/AUD', 'GBP/JPY', 'GBP/CHF', 'GBP/CAD', 
+                'GBP/AUD', 'AUD/JPY', 'AUD/CAD', 'NZD/JPY', 'CHF/JPY', 'CAD/JPY'
+            ];
             const pair = pairs[Math.floor(Math.random() * pairs.length)];
             const isCall = Math.random() > 0.5;
             const reasons = [
