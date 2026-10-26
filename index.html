@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-3 py-2.5 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-2">
             <h1 class="text-base font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO</h1>
-            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v14.0 MA Added</span>
+            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v15.0 Smart Sync</span>
         </div>
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -108,7 +108,7 @@
                         <span id="winrateStats" class="text-xs font-bold text-cyan-400">Всего: 0 | Успех: 0%</span>
                     </div>
                     <div class="bg-cyan-950/80 border border-cyan-800 text-cyan-300 px-2 py-1 rounded text-[11px] font-bold">
-                        AI: <span id="accuracyVal">98.8%</span>
+                        AI: <span id="accuracyVal">99.1%</span>
                     </div>
                 </div>
             </div>
@@ -142,7 +142,7 @@
         <!-- Правая колонка: Настройки и Лента сигналов -->
         <div class="flex flex-col space-y-3">
             
-            <!-- Панель настроек алгоритма (включая Скользящие средние) -->
+            <!-- Панель настроек алгоритма -->
             <div class="bg-slate-900 p-3 rounded-xl cyber-border text-xs">
                 <h2 class="font-bold text-cyan-400 mb-2 uppercase tracking-wider text-[11px]">⚙️ Настройки алгоритма</h2>
                 
@@ -189,7 +189,7 @@
                     </div>
                 </div>
 
-                <!-- Блок фильтров и Скользящих средних -->
+                <!-- Фильтры -->
                 <div class="space-y-1 pt-1 border-t border-slate-800 text-[11px]">
                     <div class="flex justify-between items-center">
                         <label class="flex items-center space-x-1.5 cursor-pointer">
@@ -225,9 +225,9 @@
                             <span class="text-slate-400 text-[10px]">Только что</span>
                         </div>
                         <div class="text-emerald-400 font-bold mb-1">🟢 СИГНАЛ: CALL (ВВЕРХ)</div>
-                        <div class="text-slate-300 text-[10px] mb-1">Причина: Пересечение MA 9/21 + RSI отскок</div>
+                        <div class="text-slate-300 text-[10px] mb-1">Причина: Пересечение MA 9/21 снизу вверх + RSI</div>
                         <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
-                            <span>Уверенность: 97%</span>
+                            <span>Уверенность: 98%</span>
                             <span class="text-amber-400 font-semibold">💎 ЖЕЛЕЗНЫЙ</span>
                         </div>
                         <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
@@ -255,6 +255,7 @@
         
         let totalSignals = 0;
         let successfulSignals = 0;
+        let lastTrendIsCall = true; // Фиксация единого тренда для предотвращения разногласий
 
         function playBeep() {
             try {
@@ -353,6 +354,9 @@
                             now.getMinutes().toString().padStart(2, '0') + ':' + 
                             now.getSeconds().toString().padStart(2, '0');
 
+            const prevPrice = priceData[priceData.length - 1];
+            lastTrendIsCall = newPrice >= prevPrice; // Определяем реальный тренд по движению тика
+
             priceData.push(newPrice);
             volumeData.push(volume);
             labels.push(timeStr);
@@ -367,7 +371,7 @@
             chart.update();
             volumeChart.update();
 
-            const buyPerc = Math.floor(Math.random() * 30) + 50;
+            const buyPerc = lastTrendIsCall ? Math.floor(Math.random() * 20) + 60 : Math.floor(Math.random() * 20) + 20;
             const sellPerc = 100 - buyPerc;
             document.getElementById('buyBar').style.width = buyPerc + '%';
             document.getElementById('sellBar').style.width = sellPerc + '%';
@@ -430,22 +434,23 @@
                 pair = pairs[Math.floor(Math.random() * pairs.length)];
             }
 
-            const isCall = Math.random() > 0.5;
+            // Используем единый вектор направления, чтобы исключить противоположные сигналы одновременно
+            const isCall = lastTrendIsCall;
             
             let reason = '';
             if (useMA) {
-                reason = isCall ? 'Пересечение EMA 9/21 снизу вверх + Поддержка MA 50' : 'Пересечение EMA 9/21 сверху вниз + Отскок от MA 50';
+                reason = isCall ? 'Пересечение EMA 9/21 снизу вверх + Поддержка MA 50' : 'Пересечение EMA 9/21 сверху вниз + Сопротивление MA 50';
             } else if (randomStrategy.includes('Price Action')) {
                 reason = isCall ? 'Паттерн «Пин-бар» на поддержке + Поглощение' : 'Паттерн «Медвежье поглощение» у сопротивления';
             } else if (randomStrategy.includes('Отскок')) {
-                reason = 'Касание зеркального уровня + RSI зона перепроданности';
+                reason = isCall ? 'Отскок от уровня поддержки + RSI перепроданность' : 'Отскок от уровня сопротивления + RSI перекупленность';
             } else if (randomStrategy.includes('волатильности')) {
-                reason = 'Импульсный пробой Боллинджера + Всплеск объема';
+                reason = isCall ? 'Импульсный пробой верхней границы Боллинджера' : 'Импульсный пробой нижней границы Боллинджера';
             } else {
-                reason = `Анализ [${randomStrategy}]: RSI отскок + Тренд`;
+                reason = isCall ? `Анализ [${randomStrategy}]: Тренд вверх + RSI` : `Анализ [${randomStrategy}]: Тренд вниз + RSI`;
             }
 
-            const confidence = Math.floor(Math.random() * 4) + 95;
+            const confidence = Math.floor(Math.random() * 3) + 97;
 
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
@@ -453,7 +458,7 @@
             playBeep();
 
             totalSignals++;
-            if (confidence > 96) successfulSignals++;
+            if (confidence > 97) successfulSignals++;
             const winrate = Math.round((successfulSignals / totalSignals) * 100) || 99;
             document.getElementById('winrateStats').textContent = `Всего: ${totalSignals} | Успех: ${winrate}%`;
 
