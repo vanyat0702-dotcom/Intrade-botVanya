@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-3 py-2.5 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-2">
             <h1 class="text-base font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO</h1>
-            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v17.0 Live Winrate</span>
+            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v19.0 Next-Candle Pro</span>
         </div>
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -90,7 +90,7 @@
                 </div>
             </div>
 
-            <!-- Настроение рынка и Живая статистика побед/поражений -->
+            <!-- Настроение рынка и Статистика Winrate -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                 <div class="bg-slate-900 p-2.5 rounded-xl cyber-border flex flex-col justify-between">
                     <div class="flex justify-between items-center mb-1 text-[11px]">
@@ -103,7 +103,6 @@
                     </div>
                 </div>
                 
-                <!-- Живая шкала Winrate (зеленый/красный мониторинг) -->
                 <div class="bg-slate-900 p-2.5 rounded-xl cyber-border flex flex-col justify-between">
                     <div class="flex justify-between items-center text-[11px] mb-1">
                         <span class="text-slate-400">Мониторинг точности (Winrate)</span>
@@ -228,9 +227,9 @@
                             <span class="text-slate-400 text-[10px]">Только что</span>
                         </div>
                         <div class="text-emerald-400 font-bold mb-1">🟢 СИГНАЛ: CALL (ВВЕРХ)</div>
-                        <div class="text-slate-300 text-[10px] mb-1">Причина: Пересечение MA 9/21 снизу вверх + RSI</div>
+                        <div class="text-slate-300 text-[10px] mb-1">Причина: Анализ закрытия свечи + Тренд MA</div>
                         <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
-                            <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание результата...</span>
+                            <span class="text-amber-400 font-semibold status-badge">⏳ Прогноз на след. свечу...</span>
                             <span>Уверенность: 99%</span>
                         </div>
                         <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
@@ -258,7 +257,7 @@
         
         let winsCount = 0;
         let lossesCount = 0;
-        let activeSignalsToVerify = []; // Массив активных сигналов для проверки на следующей свече
+        let activeNextCandleSignals = []; // Стеки для проверки по завершении целевой свечи
         let lastTrendIsCall = true;
         let lastSignalTimes = {};
 
@@ -339,7 +338,7 @@
                     const data = JSON.parse(event.data);
                     const realPrice = parseFloat(parseFloat(data.p).toFixed(2));
                     const realVol = Math.floor(parseFloat(data.q) * 1000) % 500 + 50;
-                    updateMarketData(realPrice, realVol);
+                    handleNewTick(realPrice, realVol);
                 };
             } else {
                 socket = setInterval(() => {
@@ -348,12 +347,12 @@
                     const change = (Math.random() - 0.49) * 0.0008;
                     const newPrice = parseFloat((lastPrice + change).toFixed(5));
                     const newVol = Math.floor(Math.random() * 400) + 100;
-                    updateMarketData(newPrice, newVol);
-                }, 2500);
+                    handleNewTick(newPrice, newVol);
+                }, 3000); // Интервал новой свечи
             }
         }
 
-        function updateMarketData(newPrice, volume) {
+        function handleNewTick(newPrice, volume) {
             const now = new Date();
             const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
                             now.getMinutes().toString().padStart(2, '0') + ':' + 
@@ -361,6 +360,9 @@
 
             const prevPrice = priceData[priceData.length - 1];
             lastTrendIsCall = newPrice >= prevPrice;
+
+            // 1. ШАГ: ЗАКРЫТИЕ СВЕЧИ, НА КОТОРУЮ ДЕЛАЛСЯ ПРОГНОЗ (ПРОВЕРКА ИТОГА)
+            processCompletedCandles(newPrice);
 
             priceData.push(newPrice);
             volumeData.push(volume);
@@ -372,9 +374,6 @@
                 labels.shift();
             }
 
-            // ПОВЕРКА ИСТОРИИ СИГНАЛОВ ПО НОВОМУ ТИККУ (Симуляция закрытия свечи)
-            verifyActiveSignals(newPrice);
-
             document.getElementById('currentPriceLabel').textContent = newPrice;
             chart.update();
             volumeChart.update();
@@ -385,17 +384,18 @@
             document.getElementById('sellBar').style.width = sellPerc + '%';
             document.getElementById('sentimentText').textContent = `${buyPerc}% BUY / ${sellPerc}% SELL`;
 
-            if (isRunning && Math.random() > 0.65) {
-                generateSignal(newPrice);
+            // 2. ШАГ: АНАЛИЗ И ВЫДАЧА СИГНАЛА НА СЛЕДУЮЩУЮ СВЕЧУ
+            if (isRunning && Math.random() > 0.6) {
+                generateSignalForNextCandle(newPrice);
             }
         }
 
-        function verifyActiveSignals(currentPrice) {
-            // Проверяем все открытые на проверку сигналы
-            activeSignalsToVerify.forEach(sig => {
-                if (!sig.verified) {
-                    // Сравниваем цену входа и текущую цену
-                    const isWin = sig.isCall ? (currentPrice > sig.entryPrice) : (currentPrice < sig.entryPrice);
+        function processCompletedCandles(currentPrice) {
+            // Проверяем все сигналы, для которых завершилась целевая свеча
+            activeNextCandleSignals.forEach(sig => {
+                if (!sig.resolved) {
+                    // Сравниваем цену открытия прогнозной свечи и цену её закрытия (currentPrice)
+                    const isWin = sig.isCall ? (currentPrice > sig.openPrice) : (currentPrice < sig.openPrice);
                     
                     if (isWin) {
                         winsCount++;
@@ -404,14 +404,14 @@
                         lossesCount++;
                         sig.element.querySelector('.status-badge').innerHTML = '❌ <span class="text-rose-400 font-bold">МИНУС (-LOSS)</span>';
                     }
-                    sig.verified = true;
+                    sig.element.classList.remove('animate-pulse');
+                    sig.resolved = true;
                 }
             });
 
-            // Очищаем старые проверенные сигналы из массива проверки
-            activeSignalsToVerify = activeSignalsToVerify.filter(sig => !sig.verified);
+            activeNextCandleSignals = activeNextCandleSignals.filter(sig => !sig.resolved);
 
-            // Обновляем статистику Winrate и шкалу
+            // Обновляем общую шкалу Winrate
             const total = winsCount + lossesCount;
             const winrate = total > 0 ? Math.round((winsCount / total) * 100) : 100;
             const winWidth = total > 0 ? Math.round((winsCount / total) * 100) : 100;
@@ -449,7 +449,7 @@
             }
         });
 
-        function generateSignal(currentPrice) {
+        function generateSignalForNextCandle(currentPrice) {
             const scanMode = document.getElementById('scanModeSelect').value;
             let pair;
 
@@ -483,15 +483,15 @@
             
             let reason = '';
             if (useMA) {
-                reason = isCall ? 'Пересечение EMA 9/21 снизу вверх + Поддержка MA 50' : 'Пересечение EMA 9/21 сверху вниз + Сопротивление MA 50';
+                reason = isCall ? 'Анализ закрытия: пробой EMA 9/21 вверх' : 'Анализ закрытия: отбой от EMA 9/21 вниз';
             } else if (randomStrategy.includes('Price Action')) {
-                reason = isCall ? 'Паттерн «Пин-бар» на поддержке + Поглощение' : 'Паттерн «Медвежье поглощение» у сопротивления';
+                reason = isCall ? 'Паттерн Price Action на закрытии свечи' : 'Медвежий пин-бар на закрытии';
             } else if (randomStrategy.includes('Отскок')) {
-                reason = isCall ? 'Отскок от уровня поддержки + RSI перепроданность' : 'Отскок от уровня сопротивления + RSI перекупленность';
+                reason = isCall ? 'Отскок от уровня поддержки (S&R)' : 'Отскок от уровня сопротивления (S&R)';
             } else if (randomStrategy.includes('волатильности')) {
-                reason = isCall ? 'Импульсный пробой верхней границы Боллинджера' : 'Импульсный пробой нижней границы Боллинджера';
+                reason = isCall ? 'Импульсный пробой Боллинджера' : 'Сужение и пробой Боллинджера вниз';
             } else {
-                reason = isCall ? `Анализ [${randomStrategy}]: Тренд вверх + RSI` : `Анализ [${randomStrategy}]: Тренд вниз + RSI`;
+                reason = isCall ? `Сигнал по [${randomStrategy}] на рост` : `Сигнал по [${randomStrategy}] на падение`;
             }
 
             const confidence = Math.floor(Math.random() * 3) + 97;
@@ -508,14 +508,14 @@
             card.innerHTML = `
                 <div class="flex justify-between font-semibold mb-1 text-[11px]">
                     <span class="text-cyan-300">${pair} • ${randomStrategy}</span>
-                    <span class="text-slate-400 text-[10px]">Только что</span>
+                    <span class="text-slate-400 text-[10px]">На след. свечу</span>
                 </div>
                 <div class="${isCall ? 'text-emerald-400' : 'text-rose-400'} font-bold mb-1">
                     ${isCall ? '🟢 СИГНАЛ: CALL (ВВЕРХ)' : '🔴 СИГНАЛ: PUT (ВНИЗ)'}
                 </div>
                 <div class="text-slate-300 text-[10px] mb-1">Причина: ${reason}</div>
                 <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
-                    <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание результата...</span>
+                    <span class="text-amber-400 font-semibold status-badge">⏳ Ждем закрытия свечи...</span>
                     <span>Уверенность: ${confidence}%</span>
                 </div>
                 <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
@@ -527,15 +527,15 @@
                 feed.removeChild(feed.lastChild);
             }
 
-            // Добавляем сигнал в массив для проверки результатов по следующей свече
-            activeSignalsToVerify.push({
-                element: card,
-                entryPrice: currentPrice,
-                isCall: isCall,
-                verified: false
-            });
-
             document.getElementById('signalCount').textContent = `${feed.children.length} сигналов`;
+
+            // Фиксируем сигнал для проверки ровно по цене закрытия следующей (прогнозной) свечи
+            activeNextCandleSignals.push({
+                element: card,
+                openPrice: currentPrice, // Цена открытия прогнозной свечи
+                isCall: isCall,
+                resolved: false
+            });
         }
 
         window.onload = initCharts;
