@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intrade Bar Pro Terminal & Signals</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #0b0e14;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .cyber-border {
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.05);
+        }
+        .cyber-glow {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Верхняя панель навигации -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex flex-wrap justify-between items-center cyber-border">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO ANALYZER</h1>
+            <span class="text-xs bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded border border-cyan-800">AI v4.8 Live</span>
+        </div>
+        <div class="flex items-center space-x-3 mt-2 sm:mt-0">
+            <select id="assetSelect" class="bg-slate-800 text-slate-200 text-sm rounded px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
+                <option value="EUR/USD">EUR/USD (Forex)</option>
+                <option value="GBP/USD">GBP/USD (Forex)</option>
+                <option value="BTC/USDT">BTC/USDT (Crypto)</option>
+            </select>
+            <select id="timeframeSelect" class="bg-slate-800 text-slate-200 text-sm rounded px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
+                <option value="1m">M1 (1 минута)</option>
+                <option value="5m">M5 (5 минут)</option>
+                <option value="15m">M15 (Мульти-ТФ)</option>
+            </select>
+            <button id="toggleBotBtn" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-4 py-1.5 rounded transition shadow-lg shadow-emerald-900/40">
+                ▶ Запустить анализ
+            </button>
+        </div>
+    </header>
+
+    <!-- Основной рабочий контент -->
+    <main class="flex-1 p-4 grid grid-cols-1 lg:grid-cols-4 gap-4">
+        
+        <!-- Левая и центральная часть: Графики и Индикаторы (3 колонки) -->
+        <div class="lg:col-span-3 flex flex-col space-y-4">
+            
+            <!-- Панель статусов и фильтров -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-900/80 p-3 rounded-lg cyber-border">
+                    <span class="text-xs text-slate-400 block">Глобальный Тренд (SMA 50)</span>
+                    <span id="trendStatus" class="text-sm font-bold text-emerald-400">📈 Восходящий (CALL)</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg cyber-border">
+                    <span class="text-xs text-slate-400 block">Новостной фильтр</span>
+                    <span id="newsStatus" class="text-sm font-bold text-cyan-400">🛡️ Тихо (Без новостей)</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg cyber-border">
+                    <span class="text-xs text-slate-400 block">Рыночный паттерн</span>
+                    <span id="patternStatus" class="text-sm font-bold text-amber-400">📐 Торговый коридор</span>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-lg cyber-border">
+                    <span class="text-xs text-slate-400 block">Рекомендация ставки</span>
+                    <span id="riskStatus" class="text-sm font-bold text-purple-400">2% от депо ($20)</span>
+                </div>
+            </div>
+
+            <!-- Главный график -->
+            <div class="bg-slate-900 p-4 rounded-xl cyber-border flex-1 flex flex-col min-h-[380px]">
+                <div class="flex justify-between items-center mb-3">
+                    <div class="flex items-center space-x-3">
+                        <span id="currentPairLabel" class="font-bold text-slate-100">EUR/USD</span>
+                        <span id="currentPriceLabel" class="text-cyan-400 font-mono font-bold">1.08542</span>
+                    </div>
+                    <div class="text-xs text-slate-400 space-x-2">
+                        <span class="text-red-400">■ Сопротивление: 1.0870</span>
+                        <span class="text-emerald-400">■ Поддержка: 1.0840</span>
+                        <span class="text-amber-400">■ Фибо 61.8%: 1.0851</span>
+                    </div>
+                </div>
+                <div class="flex-1 relative w-full h-[320px]">
+                    <canvas id="marketChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Подграфик объема -->
+            <div class="bg-slate-900 p-3 rounded-xl cyber-border h-[120px] flex flex-col">
+                <span class="text-xs text-slate-400 mb-1">Индикатор объема рынка (Volume)</span>
+                <div class="flex-1 relative w-full">
+                    <canvas id="volumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Правая колонка: Лента сигналов и Панель настроек -->
+        <div class="flex flex-col space-y-4">
+            
+            <!-- Панель настроек стратегии -->
+            <div class="bg-slate-900 p-4 rounded-xl cyber-border">
+                <h2 class="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider">⚙️ Настройки алгоритма</h2>
+                <div class="space-y-2 text-xs">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span>RSI (14) Экстрим</span>
+                        <input type="checkbox" checked class="accent-cyan-500">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span>Полосы Боллинджера</span>
+                        <input type="checkbox" checked class="accent-cyan-500">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span>Пересечение EMA (9/21)</span>
+                        <input type="checkbox" checked class="accent-cyan-500">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span>Фигуры (Треугольник / Флэт)</span>
+                        <input type="checkbox" checked class="accent-cyan-500">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span>Свечные паттерны (Пин-бар)</span>
+                        <input type="checkbox" checked class="accent-cyan-500">
+                    </label>
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <span>Фильтр новостей</span>
+                        <input type="checkbox" checked class="accent-cyan-500">
+                    </label>
+                </div>
+            </div>
+
+            <!-- Лента сигналов Telegram -->
+            <div class="bg-slate-900 p-4 rounded-xl cyber-border flex-1 flex flex-col min-h-[350px]">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold text-cyan-400 uppercase tracking-wider">📡 Лента Сигналов</h2>
+                    <span id="signalCount" class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">0 сигналов</span>
+                </div>
+                
+                <div id="signalsFeed" class="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[420px]">
+                    <!-- Карточка сигнала по умолчанию -->
+                    <div class="p-3 bg-slate-800/60 rounded-lg border border-slate-700/60 text-xs">
+                        <div class="flex justify-between font-semibold mb-1">
+                            <span class="text-cyan-300">EUR/USD • M3</span>
+                            <span class="text-slate-400">Только что</span>
+                        </div>
+                        <div class="text-emerald-400 font-bold mb-1">🟢 СИГНАЛ: CALL (ВВЕРХ)</div>
+                        <div class="text-slate-300 text-[11px] mb-1">Причина: RSI < 30 + Пробой Боллинджера + Молот</div>
+                        <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
+                            <span>Уверенность: 92%</span>
+                            <span class="text-amber-400 font-semibold">💎 ЖЕЛЕЗНЫЙ СИГНАЛ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Скрипт логики терминала -->
+    <script>
+        let isRunning = false;
+        let chart, volumeChart;
+        let priceData = [1.0850, 1.0852, 1.0851, 1.0855, 1.0853, 1.0856, 1.0854, 1.0859, 1.0857, 1.0860];
+        let labels = ['12:00', '12:01', '12:02', '12:03', '12:04', '12:05', '12:06', '12:07', '12:08', '12:09'];
+
+        // Инициализация графиков
+        function initCharts() {
+            const ctx = document.getElementById('marketChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Цена',
+                        data: priceData,
+                        borderColor: '#38bdf8',
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        tension: 0.1,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const vCtx = document.getElementById('volumeChart').getContext('2d');
+            volumeChart = new Chart(vCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: [120, 200, 150, 320, 280, 410, 190, 340, 290, 450],
+                        backgroundColor: '#0ea5e9'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Симуляция живого рынка и генерация сигналов
+        document.getElementById('toggleBotBtn').addEventListener('click', function() {
+            isRunning = !isRunning;
+            if (isRunning) {
+                this.textContent = '⏹ Остановить анализ';
+                this.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+                this.classList.add('bg-rose-600', 'hover:bg-rose-500');
+                startSimulation();
+            } else {
+                this.textContent = '▶ Запустить анализ';
+                this.classList.remove('bg-rose-600', 'hover:bg-rose-500');
+                this.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+            }
+        });
+
+        function startSimulation() {
+            if (!isRunning) return;
+
+            setTimeout(() => {
+                if (!isRunning) return;
+
+                // Добавляем новые случайные тики
+                const lastPrice = priceData[priceData.length - 1];
+                const change = (Math.random() - 0.48) * 0.0005;
+                const newPrice = parseFloat((lastPrice + change).toFixed(5));
+                
+                const now = new Date();
+                const timeStr = now.getHours().toString().padStart(2, '0') + ':' + 
+                                now.getMinutes().toString().padStart(2, '0') + ':' + 
+                                now.getSeconds().toString().padStart(2, '0');
+
+                priceData.push(newPrice);
+                labels.push(timeStr);
+
+                if (priceData.length > 20) {
+                    priceData.shift();
+                    labels.shift();
+                }
+
+                document.getElementById('currentPriceLabel').textContent = newPrice;
+                chart.update();
+                volumeChart.update();
+
+                // Рандомная генерация сигнала с вероятностью
+                if (Math.random() > 0.6) {
+                    generateSignal();
+                }
+
+                startSimulation();
+            }, 3000);
+        }
+
+        function generateSignal() {
+            const pairs = ['EUR/USD', 'GBP/USD', 'BTC/USDT'];
+            const pair = pairs[Math.floor(Math.random() * pairs.length)];
+            const isCall = Math.random() > 0.5;
+            const reasons = [
+                'RSI отскок от зоны перепроданности + Боллинджер',
+                'Пересечение EMA 9/21 + Уровень поддержки',
+                'Паттерн «Молот» + Объемный всплеск',
+                'Пробой торгового коридора + Фибоначчи 61.8%'
+            ];
+            const reason = reasons[Math.floor(Math.random() * reasons.length)];
+            const confidence = Math.floor(Math.random() * 10) + 90;
+
+            const feed = document.getElementById('signalsFeed');
+            const card = document.createElement('div');
+            card.className = 'p-3 bg-slate-800/80 rounded-lg border border-cyan-500/30 text-xs animate-pulse';
+            
+            card.innerHTML = `
+                <div class="flex justify-between font-semibold mb-1">
+                    <span class="text-cyan-300">${pair} • M3</span>
+                    <span class="text-slate-400">Только что</span>
+                </div>
+                <div class="${isCall ? 'text-emerald-400' : 'text-rose-400'} font-bold mb-1">
+                    ${isCall ? '🟢 СИГНАЛ: CALL (ВВЕРХ)' : '🔴 СИГНАЛ: PUT (ВНИЗ)'}
+                </div>
+                <div class="text-slate-300 text-[11px] mb-1">Причина: ${reason}</div>
+                <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
+                    <span>Уверенность: ${confidence}%</span>
+                    <span class="text-amber-400 font-semibold">💎 ЖЕЛЕЗНЫЙ СИГНАЛ</span>
+                </div>
+            `;
+
+            feed.prepend(card);
+            
+            // Ограничение ленты до 10 карточек
+            if (feed.children.length > 10) {
+                feed.removeChild(feed.lastChild);
+            }
+
+            document.getElementById('signalCount').textContent = `${feed.children.length} сигналов`;
+        }
+
+        window.onload = initCharts;
+    </script>
+</body>
+</html>
