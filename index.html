@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-4">
             <h1 class="text-xl font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO ANALYZER</h1>
-            <span id="wsStatus" class="text-xs bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded border border-cyan-800">AI v6.0 Pro Live</span>
+            <span id="wsStatus" class="text-xs bg-cyan-950 text-cyan-300 px-2.5 py-1 rounded border border-cyan-800">AI v7.0 Pro Live</span>
         </div>
         <div class="flex items-center space-x-3 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-sm rounded px-3 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -147,9 +147,18 @@
         <!-- Правая колонка: Лента сигналов и Панель настроек -->
         <div class="flex flex-col space-y-4">
             
-            <!-- Панель настроек стратегии -->
+            <!-- Панель настроек стратегии и режима анализа -->
             <div class="bg-slate-900 p-4 rounded-xl cyber-border">
                 <h2 class="text-sm font-bold text-cyan-400 mb-3 uppercase tracking-wider">⚙️ Настройки алгоритма</h2>
+                
+                <div class="mb-3">
+                    <label class="text-xs text-slate-400 block mb-1">Режим сканирования сигналов</label>
+                    <select id="scanModeSelect" class="w-full bg-slate-800 text-slate-200 text-xs rounded px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
+                        <option value="selected">🎯 Только выбранная пара</option>
+                        <option value="all" selected>🌐 Все пары (Сканер рынка)</option>
+                    </select>
+                </div>
+
                 <div class="mb-3">
                     <label class="text-xs text-slate-400 block mb-1">Стиль торговли</label>
                     <select id="strategySelect" class="w-full bg-slate-800 text-slate-200 text-xs rounded px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -158,6 +167,7 @@
                         <option value="breakout">Трендовый пробой (M15)</option>
                     </select>
                 </div>
+
                 <div class="space-y-2 text-xs">
                     <label class="flex items-center justify-between cursor-pointer">
                         <span>RSI (14) Экстрим</span>
@@ -185,7 +195,7 @@
                     <span id="signalCount" class="text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">0 сигналов</span>
                 </div>
                 
-                <div id="signalsFeed" class="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[400px]">
+                <div id="signalsFeed" class="flex-1 overflow-y-auto space-y-3 pr-1 max-h-[350px]">
                     <!-- Карточка сигнала по умолчанию -->
                     <div class="p-3 bg-slate-800/60 rounded-lg border border-slate-700/60 text-xs">
                         <div class="flex justify-between font-semibold mb-1">
@@ -224,14 +234,13 @@
         let totalSignals = 0;
         let successfulSignals = 0;
 
-        // Генерация звукового оповещения (Audio Beep)
         function playBeep() {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                 const oscillator = audioCtx.createOscillator();
                 const gainNode = audioCtx.createGain();
                 oscillator.type = 'sine';
-                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Нота D5
+                oscillator.frequency.setValueAtTime(587.33, audioCtx.currentTime);
                 gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
                 oscillator.connect(gainNode);
@@ -336,7 +345,6 @@
             chart.update();
             volumeChart.update();
 
-            // Динамическое обновление настроения рынка (Sentiment)
             const buyPerc = Math.floor(Math.random() * 30) + 50;
             const sellPerc = 100 - buyPerc;
             document.getElementById('buyBar').style.width = buyPerc + '%';
@@ -376,13 +384,23 @@
         });
 
         function generateSignal() {
-            const pairs = [
-                'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'USD/CAD', 
-                'AUD/USD', 'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'EUR/CHF', 
-                'EUR/CAD', 'EUR/AUD', 'GBP/JPY', 'GBP/CHF', 'GBP/CAD', 
-                'GBP/AUD', 'AUD/JPY', 'AUD/CAD', 'NZD/JPY', 'CHF/JPY', 'CAD/JPY', 'BTC/USDT'
-            ];
-            const pair = pairs[Math.floor(Math.random() * pairs.length)];
+            const scanMode = document.getElementById('scanModeSelect').value;
+            let pair;
+
+            if (scanMode === 'selected') {
+                // Сигналы строго по выбранной в данный момент паре
+                pair = document.getElementById('assetSelect').value;
+            } else {
+                // Глобальный сканер по всем парам
+                const pairs = [
+                    'EUR/USD', 'GBP/USD', 'USD/JPY', 'USD/CHF', 'USD/CAD', 
+                    'AUD/USD', 'NZD/USD', 'EUR/GBP', 'EUR/JPY', 'EUR/CHF', 
+                    'EUR/CAD', 'EUR/AUD', 'GBP/JPY', 'GBP/CHF', 'GBP/CAD', 
+                    'GBP/AUD', 'AUD/JPY', 'AUD/CAD', 'NZD/JPY', 'CHF/JPY', 'CAD/JPY', 'BTC/USDT'
+                ];
+                pair = pairs[Math.floor(Math.random() * pairs.length)];
+            }
+
             const isCall = Math.random() > 0.5;
             const strategy = document.getElementById('strategySelect').value;
             
@@ -395,13 +413,11 @@
             const reason = reasons[Math.floor(Math.random() * reasons.length)];
             const confidence = Math.floor(Math.random() * 8) + 91;
 
-            // Вибрация и звук
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
                 window.Telegram.WebApp.HapticFeedback.notificationOccurred('success');
             }
             playBeep();
 
-            // Статистика
             totalSignals++;
             if (confidence > 93) successfulSignals++;
             const winrate = Math.round((successfulSignals / totalSignals) * 100) || 94;
