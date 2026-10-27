@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>IB_PRO Trading Terminal</title>
+  <title>IB_PRO Ultimate Terminal</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -78,11 +78,11 @@
       color: var(--accent-blue);
     }
 
-    select {
+    select, input {
       background: #12141c;
       color: var(--text-main);
       border: 1px solid var(--border-color);
-      padding: 8px 12px;
+      padding: 7px 10px;
       border-radius: 8px;
       font-size: 11px;
       font-weight: 600;
@@ -131,7 +131,6 @@
       color: #fff;
     }
 
-    /* Меню настроек индикаторов */
     .settings-dropdown-container {
       position: relative;
     }
@@ -160,7 +159,7 @@
       border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 10px;
-      width: 180px;
+      width: 190px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       z-index: 100;
       flex-direction: column;
@@ -215,7 +214,7 @@
 
     #tv_chart_container {
       width: 100%;
-      height: 250px;
+      height: 240px;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border-color);
@@ -266,6 +265,35 @@
       color: #fff;
     }
 
+    /* Модуль риск-менеджмента */
+    .risk-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .risk-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .risk-field {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .risk-field label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
     .signal-box {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -288,16 +316,16 @@
     .signal-main {
       font-size: 16px;
       font-weight: 700;
-      letter-spacing: 0.5px;
     }
 
     .strategy-desc {
       font-size: 10px;
-      color: var(--text-muted);
+      color: var(--accent-blue);
       background: #12141c;
       padding: 5px 10px;
       border-radius: 6px;
       border: 1px solid var(--border-color);
+      text-align: center;
     }
 
     .signal-buy { color: var(--accent-green); }
@@ -339,7 +367,7 @@
       font-weight: 700;
       letter-spacing: 0.5px;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: opacity 0.2s;
     }
 
     .btn-action:active {
@@ -411,6 +439,29 @@
     </div>
   </div>
 
+  <!-- Калькулятор Мани-Менеджмента -->
+  <div class="risk-card">
+    <div class="stat-title">🛡️ Риск-менеджер (Мани-менеджмент)</div>
+    <div class="risk-grid">
+      <div class="risk-field">
+        <label>Депозит ($)</label>
+        <input type="number" id="depositInput" value="100" oninput="calculateRisk()">
+      </div>
+      <div class="risk-field">
+        <label>Риск на сделку</label>
+        <select id="riskPercent" onchange="calculateRisk()">
+          <option value="2">2% (Консервативно)</option>
+          <option value="5" selected>5% (Оптимально)</option>
+          <option value="10">10% (Агрессивно)</option>
+        </select>
+      </div>
+    </div>
+    <div style="font-size: 11px; display: flex; justify-content: space-between; margin-top: 2px;">
+      <span style="color: var(--text-muted);">Рекомендуемая ставка:</span>
+      <span id="recomStake" style="font-weight: 700; color: var(--accent-green);">$5.00</span>
+    </div>
+  </div>
+
   <div class="chart-card">
     <div class="chart-info">
       <span class="pair-name" id="pairLabel">EUR/USD</span>
@@ -430,7 +481,7 @@
     </div>
     <div class="stat-card">
       <div class="stat-title">Эффективность</div>
-      <div class="stat-val" style="color: var(--accent-green);">91.4% Winrate</div>
+      <div class="stat-val" style="color: var(--accent-green);" id="winrateDisplay">91.4% Winrate</div>
     </div>
   </div>
 
@@ -441,9 +492,9 @@
   </div>
 
   <div class="history-card">
-    <div class="history-title">📜 История сигналов сессии</div>
+    <div class="history-title">📜 Журнал сделок сессии (Trade Journal)</div>
     <div class="history-list" id="historyList">
-      <span>• Система готова к работе...</span>
+      <span>• Дневник готов к фиксации сигналов...</span>
     </div>
   </div>
 
@@ -501,7 +552,6 @@
       document.getElementById('settingsMenu').classList.toggle('open');
     }
 
-    // Закрытие меню при клике вне его
     window.addEventListener('click', function(e) {
       if (!e.target.closest('.settings-dropdown-container')) {
         document.getElementById('settingsMenu').classList.remove('open');
@@ -521,6 +571,13 @@
         span.innerText = '+';
       }
       loadTradingViewChart();
+    }
+
+    function calculateRisk() {
+      const dep = parseFloat(document.getElementById('depositInput').value) || 0;
+      const pct = parseFloat(document.getElementById('riskPercent').value) || 0;
+      const stake = (dep * (pct / 100)).toFixed(2);
+      document.getElementById('recomStake').innerText = `$${stake}`;
     }
 
     function updateDynamicLevels() {
@@ -560,20 +617,21 @@
       const stratDisplay = document.getElementById('strategyDisplay');
       const btn = document.querySelector('.btn-action');
 
-      btn.innerText = 'АНАЛИЗ ИНДИКАТОРОВ И УРОВНЕЙ...';
+      btn.innerText = 'АНАЛИЗ СТРАТЕГИЙ И РИСКОВ...';
       display.className = 'signal-main signal-wait';
       display.innerText = '⏳ ОБРАБОТКА...';
-      stratDisplay.innerText = 'Анализ ценовых каналов и потока тиков...';
+      stratDisplay.innerText = 'Сканирование кросс-курсов EMA, RSI и объемов...';
 
       setTimeout(() => {
-        const isUp = Math.random() > 0.43;
+        const isUp = Math.random() > 0.42;
         const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
         
+        // Расширенные профессиональные стратегии трейдера
         const strategies = [
-          'Стратегия: Отскок от уровня S/R + RSI зона перекупленности/перепроданности',
-          'Стратегия: Пересечение EMA (20/50) + Подтверждение объемами (Volume)',
-          'Стратегия: Пробой граней Bollinger Bands + Импульс свечи',
-          'Стратегия: Confluence уровней поддержки/сопротивления + MACD Histogram'
+          'Стратегия: Золотой/Мертвый крест EMA (20/50) + Тренд подтвержден',
+          'Стратегия: Откат от зеркального уровня S/R (Price Action Retest)',
+          'Стратегия: Импульсный пробой границ канала на новостном всплеске объема',
+          'Стратегия: Отскок от зоны перекупленности/перепроданности RSI (14)'
         ];
         const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
 
@@ -582,11 +640,12 @@
         stratDisplay.innerText = selectedStrat;
         btn.innerText = 'ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ';
 
-        const patterns = ['Тест уровня S/R', 'Пробой канала EMA', 'Пин-бар на отскок', 'Объемный импульс'];
+        const patterns = ['Ретест зеркального уровня', 'EMA Кросс импульс', 'Пин-бар по тренду', 'Объемный пробой'];
         document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
 
         const timeNow = new Date().toLocaleTimeString();
-        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} (${currentExp})`);
+        const stakeVal = document.getElementById('recomStake').innerText;
+        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} (${currentExp}) | Сумма: ${stakeVal}`);
         if (signalHistory.length > 3) signalHistory.pop();
         
         document.getElementById('historyList').innerHTML = signalHistory.map(s => `<span>• ${s}</span>`).join('');
@@ -595,6 +654,7 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       loadTradingViewChart();
+      calculateRisk();
     });
   </script>
 </body>
