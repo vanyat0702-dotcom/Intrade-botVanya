@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-3 py-2.5 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-2">
             <h1 class="text-base font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO</h1>
-            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v26.0 Interactive</span>
+            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v27.0 Dynamic</span>
         </div>
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -182,7 +182,7 @@
                             <span>🛡️ Отскок от уровней (S&R)</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="Пробой волатильности" class="accent-cyan-500 rounded">
+                            <input type="checkbox" name="strat" value="Пробой волатильности" checked class="accent-cyan-500 rounded">
                             <span>🚀 Пробой волатильности</span>
                         </label>
                     </div>
@@ -354,8 +354,8 @@
                 socket = setInterval(() => {
                     if (!isRunning) return;
                     const lastPrice = priceData[priceData.length - 1];
-                    const change = (Math.random() - 0.49) * 0.0008;
-                    const newPrice = parseFloat((lastPrice + change).toFixed(5));
+                    const change = (Math.random() - 0.49) * (lastPrice > 1000 ? 15 : 0.0008);
+                    const newPrice = parseFloat((lastPrice + change).toFixed(lastPrice > 1000 ? 2 : 5));
                     const newVol = Math.floor(Math.random() * 400) + 100;
                     updateMarketData(newPrice, newVol);
                 }, 3000);
@@ -381,9 +381,24 @@
 
             document.getElementById('currentPriceLabel').textContent = newPrice;
             
-            const spread = newPrice > 1000 ? 150 : 0.0025;
-            document.getElementById('resistanceLabel').textContent = `Сопр: ${(newPrice + spread).toFixed(newPrice > 1000 ? 2 : 4)}`;
-            document.getElementById('supportLabel').textContent = `Поддерж: ${(newPrice - spread).toFixed(newPrice > 1000 ? 2 : 4)}`;
+            // ДИНАМИЧЕСКИЙ РАСЧЕТ УРОВНЕЙ И ПАТТЕРНОВ
+            const isCrypto = newPrice > 1000;
+            const spread = isCrypto ? 150 : 0.0025;
+            document.getElementById('resistanceLabel').textContent = `Сопр: ${(newPrice + spread).toFixed(isCrypto ? 2 : 4)}`;
+            document.getElementById('supportLabel').textContent = `Поддерж: ${(newPrice - spread).toFixed(isCrypto ? 2 : 4)}`;
+
+            // Определяем рыночный паттерн на основе последних точек графика
+            const patternEl = document.getElementById('patternStatus');
+            if (newPrice > prevPrice * 1.0002) {
+                patternEl.innerHTML = '📈 Тренд вверх';
+                patternEl.className = 'font-bold text-emerald-400';
+            } else if (newPrice < prevPrice * 0.9998) {
+                patternEl.innerHTML = '📉 Тренд вниз';
+                patternEl.className = 'font-bold text-rose-400';
+            } else {
+                patternEl.innerHTML = '📐 Коридор';
+                patternEl.className = 'font-bold text-amber-400';
+            }
 
             chart.update();
             volumeChart.update();
@@ -519,7 +534,6 @@
             const totalDurationSeconds = secondsLeftToClose + (tfMinutes * 60);
             const entryPrice = currentPrice;
 
-            // Таймер автоматической проверки
             card.dataset.timerId = setTimeout(() => {
                 if (!card.dataset.resolved) {
                     const finalPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
@@ -531,7 +545,7 @@
 
         function manualResolve(btn, outcome) {
             const card = btn.closest('div.p-2.5');
-            if (card.dataset.resolved) return; // Если уже решено, не дублируем
+            if (card.dataset.resolved) return;
             if (card.dataset.timerId) clearTimeout(card.dataset.timerId);
             applyResult(card, outcome);
         }
@@ -540,7 +554,6 @@
             card.dataset.resolved = "true";
             card.classList.remove('animate-pulse');
 
-            // Удаляем кнопки ручного выбора после клика
             const btnContainer = card.querySelector('.flex.space-x-1');
             if (btnContainer) btnContainer.remove();
 
