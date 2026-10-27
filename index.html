@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Intrade Bar Pro Terminal</title>
-  <script src="[https://telegram.org/js/telegram-web-app.js](https://telegram.org/js/telegram-web-app.js)"></script>
-  <link href="[https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap)" rel="stylesheet">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-dark: #05070e;
-      --card-bg: rgba(13, 17, 39, 0.7);
-      --card-border: rgba(0, 240, 255, 0.15);
+      --card-bg: rgba(13, 17, 39, 0.85);
+      --card-border: rgba(0, 240, 255, 0.2);
       --neon-cyan: #00f0ff;
       --neon-green: #00ff66;
       --neon-red: #ff0055;
@@ -30,8 +30,8 @@
     body {
       background-color: var(--bg-dark);
       background-image: 
-        radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15), transparent 70%),
-        radial-gradient(circle at 0% 100%, rgba(0, 240, 255, 0.1), transparent 50%);
+        radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.2), transparent 70%),
+        radial-gradient(circle at 0% 100%, rgba(0, 240, 255, 0.15), transparent 50%);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -41,7 +41,6 @@
       overflow-x: hidden;
     }
 
-    /* Header */
     .header {
       display: flex;
       justify-content: space-between;
@@ -49,9 +48,9 @@
       background: var(--card-bg);
       backdrop-filter: blur(16px);
       border: 1px solid var(--card-border);
-      padding: 10px 12px;
+      padding: 10px 14px;
       border-radius: 14px;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.05);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.08);
     }
 
     .brand {
@@ -61,8 +60,8 @@
     }
 
     .brand-logo {
-      width: 28px;
-      height: 28px;
+      width: 30px;
+      height: 30px;
       background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
       border-radius: 8px;
       display: flex;
@@ -72,7 +71,7 @@
       font-weight: 900;
       font-size: 14px;
       color: #000;
-      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
     }
 
     .brand-title {
@@ -87,7 +86,7 @@
     }
 
     select {
-      background: rgba(5, 7, 14, 0.8);
+      background: rgba(5, 7, 14, 0.9);
       color: var(--neon-cyan);
       border: 1px solid var(--card-border);
       padding: 6px 10px;
@@ -97,7 +96,6 @@
       outline: none;
     }
 
-    /* Controls Bar */
     .controls-panel {
       background: var(--card-bg);
       backdrop-filter: blur(12px);
@@ -118,14 +116,14 @@
 
     .tf-selector {
       display: flex;
-      background: rgba(0,0,0,0.4);
+      background: rgba(0,0,0,0.5);
       padding: 2px;
       border-radius: 8px;
       border: 1px solid var(--card-border);
     }
 
     .tf-btn {
-      padding: 4px 10px;
+      padding: 5px 12px;
       font-size: 10px;
       font-weight: 700;
       border-radius: 6px;
@@ -138,7 +136,7 @@
     .tf-btn.active {
       background: var(--neon-cyan);
       color: #000;
-      box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
 
     .tools-scroll {
@@ -151,9 +149,9 @@
     .tools-scroll::-webkit-scrollbar { display: none; }
 
     .tool-chip {
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.04);
       border: 1px solid var(--card-border);
-      padding: 4px 8px;
+      padding: 5px 9px;
       border-radius: 6px;
       font-size: 10px;
       color: var(--text-muted);
@@ -167,20 +165,19 @@
     .tool-chip.active {
       border-color: var(--neon-green);
       color: var(--neon-green);
-      background: rgba(0, 255, 102, 0.08);
+      background: rgba(0, 255, 102, 0.1);
     }
 
-    /* Candlestick Chart Card */
     .chart-card {
       background: var(--card-bg);
       backdrop-filter: blur(16px);
       border: 1px solid var(--card-border);
       border-radius: 14px;
-      padding: 10px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
-      position: relative;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.05);
     }
 
     .chart-info {
@@ -214,13 +211,13 @@
 
     canvas {
       width: 100%;
-      height: 210px;
+      height: 220px;
       display: block;
       border-radius: 8px;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(0, 240, 255, 0.1);
     }
 
-    /* Grid Analytics */
     .grid-2 {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -230,7 +227,7 @@
     .stat-card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      padding: 8px 10px;
+      padding: 9px 11px;
       border-radius: 10px;
       display: flex;
       flex-direction: column;
@@ -249,18 +246,17 @@
       font-weight: 700;
     }
 
-    /* Action Banner */
     .signal-box {
-      background: linear-gradient(135deg, rgba(112, 0, 255, 0.15), rgba(0, 240, 255, 0.15));
+      background: linear-gradient(135deg, rgba(112, 0, 255, 0.2), rgba(0, 240, 255, 0.2));
       border: 1px solid var(--neon-cyan);
       border-radius: 14px;
-      padding: 12px;
+      padding: 14px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
     }
 
     .signal-title {
@@ -277,22 +273,22 @@
       letter-spacing: 1px;
     }
 
-    .signal-buy { color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.5); }
-    .signal-sell { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,0,85,0.5); }
+    .signal-buy { color: var(--neon-green); text-shadow: 0 0 12px rgba(0,255,102,0.6); }
+    .signal-sell { color: var(--neon-red); text-shadow: 0 0 12px rgba(255,0,85,0.6); }
     .signal-wait { color: var(--neon-cyan); }
 
     .btn-action {
       background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
       color: #fff;
       border: none;
-      padding: 12px;
+      padding: 14px;
       border-radius: 12px;
       font-family: 'Orbitron', sans-serif;
       font-size: 13px;
       font-weight: 800;
       letter-spacing: 1px;
       cursor: pointer;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
       transition: all 0.2s ease;
     }
 
@@ -303,7 +299,6 @@
 </head>
 <body>
 
-  <!-- Header -->
   <div class="header">
     <div class="brand">
       <div class="brand-logo">IB</div>
@@ -328,7 +323,6 @@
     </select>
   </div>
 
-  <!-- Controls Panel -->
   <div class="controls-panel">
     <div class="panel-row">
       <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Таймфрейм:</span>
@@ -347,11 +341,10 @@
     </div>
   </div>
 
-  <!-- Candlestick Chart -->
   <div class="chart-card">
     <div class="chart-info">
       <div>
-        <span class="pair-name" id="pairLabel">EUR/USD OTC</span>
+        <span class="pair-name" id="pairLabel">EUR/USD</span>
         <span class="payout-badge" id="payoutBadge">85%</span>
       </div>
       <div class="price-value" id="priceDisplay">1.08542</div>
@@ -359,7 +352,6 @@
     <canvas id="candleCanvas"></canvas>
   </div>
 
-  <!-- Market Grid -->
   <div class="grid-2">
     <div class="stat-card">
       <div class="stat-title">Паттерн рынка</div>
@@ -379,13 +371,11 @@
     </div>
   </div>
 
-  <!-- Signal Box -->
   <div class="signal-box">
     <div class="signal-title">Сигнал нейросети</div>
     <div class="signal-main signal-wait" id="signalDisplay">ГОТОВ К АНАЛИЗУ</div>
   </div>
 
-  <!-- Action Button -->
   <button class="btn-action" onclick="getSignal()">ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ</button>
 
   <script>
@@ -408,118 +398,3 @@
 
     function generateCandles() {
       candles = [];
-      let basePrice = 1.0850;
-      for (let i = 0; i < 24; i++) {
-        let open = basePrice + (Math.random() - 0.48) * 0.0020;
-        let close = open + (Math.random() - 0.48) * 0.0025;
-        let high = Math.max(open, close) + Math.random() * 0.0010;
-        let low = Math.min(open, close) - Math.random() * 0.0010;
-        candles.push({ open, high, low, close });
-        basePrice = close;
-      }
-      const last = candles[candles.length - 1];
-      document.getElementById('priceDisplay').innerText = last.close.toFixed(5);
-    }
-
-    function drawCandles() {
-      const w = canvas.getBoundingClientRect().width;
-      const h = canvas.getBoundingClientRect().height;
-      ctx.clearRect(0, 0, w, h);
-
-      if (candles.length === 0) return;
-
-      const highs = candles.map(c => c.high);
-      const lows = candles.map(c => c.low);
-      const maxP = Math.max(...highs);
-      const minP = Math.min(...lows);
-      const range = (maxP - minP) || 1;
-
-      // Grid lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      for (let y = 20; y < h; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(w, y);
-        ctx.stroke();
-      }
-
-      const candleW = w / candles.length;
-
-      candles.forEach((c, i) => {
-        const isGreen = c.close >= c.open;
-        const x = i * candleW + candleW / 2;
-        const openY = h - ((c.open - minP) / range) * (h - 30) - 15;
-        const closeY = h - ((c.close - minP) / range) * (h - 30) - 15;
-        const highY = h - ((c.high - minP) / range) * (h - 30) - 15;
-        const lowY = h - ((c.low - minP) / range) * (h - 30) - 15;
-
-        // Wick
-        ctx.strokeStyle = isGreen ? '#00ff66' : '#ff0055';
-        ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        ctx.moveTo(x, highY);
-        ctx.lineTo(x, lowY);
-        ctx.stroke();
-
-        // Body
-        ctx.fillStyle = isGreen ? '#00ff66' : '#ff0055';
-        const bodyTop = Math.min(openY, closeY);
-        const bodyH = Math.max(Math.abs(openY - closeY), 3);
-        ctx.fillRect(x - candleW * 0.3, bodyTop, candleW * 0.6, bodyH);
-      });
-    }
-
-    function changeAsset() {
-      const select = document.getElementById('assetSelect');
-      const text = select.options[select.selectedIndex].text;
-      document.getElementById('pairLabel').innerText = text.split(' ')[0];
-      generateCandles();
-      drawCandles();
-    }
-
-    function setTF(tf, btn) {
-      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentTF = tf;
-      generateCandles();
-      drawCandles();
-    }
-
-    function toggleTool(chip) {
-      chip.classList.toggle('active');
-      const span = chip.querySelector('span');
-      if (chip.classList.contains('active')) {
-        span.innerText = '✓';
-      } else {
-        span.innerText = '+';
-      }
-    }
-
-    function getSignal() {
-      const display = document.getElementById('signalDisplay');
-      const btn = document.querySelector('.btn-action');
-
-      btn.innerText = 'АНАЛИЗ ПОТОКА ДАННЫХ...';
-      display.className = 'signal-main signal-wait';
-      display.innerText = '⏳ АНАЛИЗ...';
-
-      setTimeout(() => {
-        const isUp = Math.random() > 0.45;
-        const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
-        display.innerText = `${dir} • ${currentTF}`;
-        display.className = `signal-main ${isUp ? 'signal-buy' : 'signal-sell'}`;
-        btn.innerText = 'ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ';
-
-        const patterns = ['Бычье поглощение', 'Двойное дно', 'Пробой уровня S/R', 'Пин-бар на отскок'];
-        document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
-      }, 1000);
-    }
-
-    window.addEventListener('resize', () => { initCanvas(); drawCandles(); });
-    initCanvas();
-    generateCandles();
-    drawCandles();
-  </script>
-</body>
-</html>
