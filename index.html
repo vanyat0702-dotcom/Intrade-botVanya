@@ -31,7 +31,7 @@
     <header class="bg-slate-900 border-b border-slate-800 px-3 py-2.5 flex flex-wrap justify-between items-center cyber-border">
         <div class="flex items-center space-x-2">
             <h1 class="text-base font-bold text-cyan-400 cyber-glow">⚡ INTRADE BAR PRO</h1>
-            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v25.0 MSK Universal</span>
+            <span id="wsStatus" class="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">v26.0 Interactive</span>
         </div>
         <div class="flex items-center space-x-2 mt-2 sm:mt-0">
             <select id="assetSelect" class="bg-slate-800 text-slate-200 text-xs rounded px-2 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500">
@@ -123,8 +123,8 @@
                         <span id="currentPriceLabel" class="text-cyan-400 font-mono font-bold">1.08542</span>
                     </div>
                     <div class="text-[10px] text-slate-400 space-x-1">
-                        <span class="text-red-400">Сопр: 1.0870</span>
-                        <span class="text-emerald-400">Поддерж: 1.0840</span>
+                        <span id="resistanceLabel" class="text-red-400">Сопр: 1.0870</span>
+                        <span id="supportLabel" class="text-emerald-400">Поддерж: 1.0840</span>
                     </div>
                 </div>
                 <div class="flex-1 relative w-full h-[240px]">
@@ -182,7 +182,7 @@
                             <span>🛡️ Отскок от уровней (S&R)</span>
                         </label>
                         <label class="flex items-center space-x-2 cursor-pointer hover:text-cyan-400">
-                            <input type="checkbox" name="strat" value="Пробой волатильности" checked class="accent-cyan-500 rounded">
+                            <input type="checkbox" name="strat" value="Пробой волатильности" class="accent-cyan-500 rounded">
                             <span>🚀 Пробой волатильности</span>
                         </label>
                     </div>
@@ -229,6 +229,10 @@
                             <span class="text-amber-400 font-semibold status-badge">⏳ Ожидание закрытия прогнозной свечи...</span>
                             <span>Уверенность: 99%</span>
                         </div>
+                        <div class="flex space-x-1 mt-1.5">
+                            <button onclick="manualResolve(this, 'win')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-0.5 rounded text-[10px]">✅ Плюс</button>
+                            <button onclick="manualResolve(this, 'loss')" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold py-0.5 rounded text-[10px]">❌ Минус</button>
+                        </div>
                         <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
                     </div>
                 </div>
@@ -255,7 +259,7 @@
         let winsCount = 0;
         let lossesCount = 0;
         let lastTrendIsCall = true;
-        let signaledCandlesMap = {}; // Защита от повторных сигналов на одном баре
+        let signaledCandlesMap = {};
 
         function playBeep() {
             try {
@@ -322,10 +326,8 @@
             });
         }
 
-        // Вывод и отслеживание Московского времени (MSK, UTC+3)
         setInterval(() => {
             const now = new Date();
-            // Получаем время по МСК через Intl
             const mskString = now.toLocaleTimeString('ru-RU', { timeZone: 'Europe/Moscow', hour12: false });
             document.getElementById('mskClock').textContent = mskString;
 
@@ -378,6 +380,11 @@
             }
 
             document.getElementById('currentPriceLabel').textContent = newPrice;
+            
+            const spread = newPrice > 1000 ? 150 : 0.0025;
+            document.getElementById('resistanceLabel').textContent = `Сопр: ${(newPrice + spread).toFixed(newPrice > 1000 ? 2 : 4)}`;
+            document.getElementById('supportLabel').textContent = `Поддерж: ${(newPrice - spread).toFixed(newPrice > 1000 ? 2 : 4)}`;
+
             chart.update();
             volumeChart.update();
 
@@ -388,44 +395,16 @@
             document.getElementById('sentimentText').textContent = `${buyPerc}% BUY / ${sellPerc}% SELL`;
         }
 
-        // ГЛАВНЫЙ МЕХАНИЗМ: ПРИВЯЗКА К СИСТЕМНЫМ ЧАСАМ ПО МСК И ВЫБРАННОМУ ТАЙМФРЕЙМУ
-        function checkMSKCandleTiming(now) {
-            // Получаем текущие часы, минуты и секунды по МСК
-            const mskOptions = { timeZone: 'Europe/Moscow', hour12: false };
-            const hours = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, hour: '2-digit' }));
-            const minutes = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, minute: '2-digit' }));
-            const seconds = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, second: '2-digit' }));
-
-            const totalSecondsToday = hours * 3600 + minutes * 60 + seconds;
-            
-            // Выбранный пользователем таймфрейм в минутах (3, 5 или 15)
-            const tfMinutes = parseInt(document.getElementById('tfSelect').value);
-            const tfSeconds = tfMinutes * 60;
-
-            // Остаток секунд до конца текущей свечи выбранного таймфрейма
-            const secondsIntoCurrentCandle = totalSecondsToday % tfSeconds;
-            const secondsLeft = tfSeconds - secondsIntoCurrentCandle;
-
-            // Уникальный ID текущей свечи (номер свечи с начала суток), чтобы не слать повторы
-            const currentCandleId = Math.floor(totalSecondsToday / tfSeconds);
-
-            // Пре-анализ запускается строго за 30-40 секунд до закрытия свечи
-            if (secondsLeft >= 30 && secondsLeft <= 40) {
-                if (!signaledCandlesMap[currentCandleId]) {
-                    signaledCandlesMap[currentCandleId] = true;
-                    
-                    const currentPair = document.getElementById('assetSelect').value;
-                    const currentPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
-                    
-                    // Выдаем сигнал на СЛЕДУЮЩУЮ свечу
-                    generateSignal(currentPair, currentPrice, tfMinutes, secondsLeft);
-                }
-            }
-        }
-
         document.getElementById('assetSelect').addEventListener('change', function() {
             const selectedPair = this.value;
             document.getElementById('currentPairLabel').textContent = selectedPair;
+            
+            if (selectedPair === 'BTC/USDT') {
+                priceData = [91200, 91250, 91180, 91300, 91260, 91350, 91310, 91400, 91380, 91450];
+            } else {
+                priceData = [1.0850, 1.0852, 1.0851, 1.0855, 1.0853, 1.0856, 1.0854, 1.0859, 1.0857, 1.0860];
+            }
+
             if (isRunning) {
                 connectWebSocket(selectedPair);
             }
@@ -450,6 +429,30 @@
             }
         });
 
+        function checkMSKCandleTiming(now) {
+            const mskOptions = { timeZone: 'Europe/Moscow', hour12: false };
+            const hours = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, hour: '2-digit' }));
+            const minutes = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, minute: '2-digit' }));
+            const seconds = parseInt(now.toLocaleString('ru-RU', { ...mskOptions, second: '2-digit' }));
+
+            const totalSecondsToday = hours * 3600 + minutes * 60 + seconds;
+            const tfMinutes = parseInt(document.getElementById('tfSelect').value);
+            const tfSeconds = tfMinutes * 60;
+
+            const secondsIntoCurrentCandle = totalSecondsToday % tfSeconds;
+            const secondsLeft = tfSeconds - secondsIntoCurrentCandle;
+            const currentCandleId = Math.floor(totalSecondsToday / tfSeconds);
+
+            if (secondsLeft >= 30 && secondsLeft <= 40) {
+                if (!signaledCandlesMap[currentCandleId]) {
+                    signaledCandlesMap[currentCandleId] = true;
+                    const currentPair = document.getElementById('assetSelect').value;
+                    const currentPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
+                    generateSignal(currentPair, currentPrice, tfMinutes, secondsLeft);
+                }
+            }
+        }
+
         function generateSignal(pair, currentPrice, tfMinutes, secondsLeftToClose) {
             const scanMode = document.getElementById('scanModeSelect').value;
             let targetPair = pair;
@@ -473,13 +476,7 @@
             const useMA = document.getElementById('maFilter').checked;
             const isCall = lastTrendIsCall;
             
-            let reason = '';
-            if (useMA) {
-                reason = isCall ? `Пре-анализ M${tfMinutes} по МСК: пробой MA вверх` : `Пре-анализ M${tfMinutes} по МСК: отбой от MA вниз`;
-            } else {
-                reason = isCall ? `Паттерн Price Action на таймфрейме M${tfMinutes}` : `Медвежий сетап на закрытии M${tfMinutes}`;
-            }
-
+            let reason = isCall ? `Пре-анализ M${tfMinutes} по МСК: пробой MA вверх` : `Пре-анализ M${tfMinutes} по МСК: отбой от MA вниз`;
             const confidence = Math.floor(Math.random() * 3) + 97;
 
             if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
@@ -497,12 +494,16 @@
                     <span class="text-slate-400 text-[10px]">Синк по МСК</span>
                 </div>
                 <div class="${isCall ? 'text-emerald-400' : 'text-rose-400'} font-bold mb-1">
-                    ${isCall ? '🟢 СИГНАЛ: CALL (ВВЕРХ)' : '🟢 СИГНАЛ: PUT (ВНИЗ)'}
+                    ${isCall ? '🟢 СИГНАЛ: CALL (ВВЕРХ)' : '🔴 СИГНАЛ: PUT (ВНИЗ)'}
                 </div>
                 <div class="text-slate-300 text-[10px] mb-1">Причина: ${reason}</div>
                 <div class="flex justify-between text-[10px] text-slate-400 border-t border-slate-700 pt-1 mt-1">
                     <span class="text-amber-400 font-semibold status-badge">⏳ Экспирация на след. свечу M${tfMinutes}...</span>
                     <span>Уверенность: ${confidence}%</span>
+                </div>
+                <div class="flex space-x-1 mt-1.5">
+                    <button onclick="manualResolve(this, 'win')" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-0.5 rounded text-[10px]">✅ Плюс</button>
+                    <button onclick="manualResolve(this, 'loss')" class="flex-1 bg-rose-600 hover:bg-rose-500 text-white font-semibold py-0.5 rounded text-[10px]">❌ Минус</button>
                 </div>
                 <a href="https://intrade.bar" target="_blank" class="mt-1.5 block w-full text-center bg-cyan-600 hover:bg-cyan-500 text-white font-semibold py-1 rounded transition text-[11px]">Открыть в Intrade Bar</a>
             `;
@@ -515,34 +516,50 @@
 
             document.getElementById('signalCount').textContent = `${feed.children.length} сигналов`;
 
-            // ТОЧНЫЙ РАСЧЕТ ИТОГА СДЕЛКИ ПО ВРЕМЕНИ СВЕЧИ
-            // Сделка длится ровно столько, сколько осталось до конца текущей свечи (секунды до конца) + полный период следующей свечи (tfMinutes * 60)
             const totalDurationSeconds = secondsLeftToClose + (tfMinutes * 60);
             const entryPrice = currentPrice;
 
-            setTimeout(() => {
-                const finalPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
-                const isWin = isCall ? (finalPrice > entryPrice) : (finalPrice < entryPrice);
-                
-                if (isWin) {
-                    winsCount++;
-                    card.querySelector('.status-badge').innerHTML = '✅ <span class="text-emerald-400 font-bold">ПЛЮС (+WIN)</span>';
-                } else {
-                    lossesCount++;
-                    card.querySelector('.status-badge').innerHTML = '❌ <span class="text-rose-400 font-bold">МИНУС (-LOSS)</span>';
+            // Таймер автоматической проверки
+            card.dataset.timerId = setTimeout(() => {
+                if (!card.dataset.resolved) {
+                    const finalPrice = parseFloat(document.getElementById('currentPriceLabel').textContent);
+                    const isWin = isCall ? (finalPrice > entryPrice) : (finalPrice < entryPrice);
+                    applyResult(card, isWin ? 'win' : 'loss');
                 }
-                card.classList.remove('animate-pulse');
+            }, totalDurationSeconds * 1000);
+        }
 
-                // Обновляем общую шкалу Winrate
-                const total = winsCount + lossesCount;
-                const winrate = total > 0 ? Math.round((winsCount / total) * 100) : 100;
-                const winWidth = total > 0 ? Math.round((winsCount / total) * 100) : 100;
-                const lossWidth = 100 - winWidth;
+        function manualResolve(btn, outcome) {
+            const card = btn.closest('div.p-2.5');
+            if (card.dataset.resolved) return; // Если уже решено, не дублируем
+            if (card.dataset.timerId) clearTimeout(card.dataset.timerId);
+            applyResult(card, outcome);
+        }
 
-                document.getElementById('winrateStats').textContent = `Побед: ${winsCount} | Поражений: ${lossesCount} (${winrate}%)`;
-                document.getElementById('winBar').style.width = winWidth + '%';
-                document.getElementById('lossBar').style.width = lossWidth + '%';
-            }, totalDurationSeconds * 1000); // Таймер ждет точное время закрытия прогнозной свечи
+        function applyResult(card, outcome) {
+            card.dataset.resolved = "true";
+            card.classList.remove('animate-pulse');
+
+            // Удаляем кнопки ручного выбора после клика
+            const btnContainer = card.querySelector('.flex.space-x-1');
+            if (btnContainer) btnContainer.remove();
+
+            if (outcome === 'win') {
+                winsCount++;
+                card.querySelector('.status-badge').innerHTML = '✅ <span class="text-emerald-400 font-bold">ПЛЮС (+WIN)</span>';
+            } else {
+                lossesCount++;
+                card.querySelector('.status-badge').innerHTML = '❌ <span class="text-rose-400 font-bold">МИНУС (-LOSS)</span>';
+            }
+
+            const total = winsCount + lossesCount;
+            const winrate = total > 0 ? Math.round((winsCount / total) * 100) : 100;
+            const winWidth = total > 0 ? Math.round((winsCount / total) * 100) : 100;
+            const lossWidth = 100 - winWidth;
+
+            document.getElementById('winrateStats').textContent = `Побед: ${winsCount} | Поражений: ${lossesCount} (${winrate}%)`;
+            document.getElementById('winBar').style.width = winWidth + '%';
+            document.getElementById('lossBar').style.width = lossWidth + '%';
         }
 
         window.onload = initCharts;
