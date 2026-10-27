@@ -3,21 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Intrade Bar Pro Terminal Ultimate</title>
+  <title>IB_PRO Trading Terminal</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #03050b;
-      --card-bg: rgba(10, 14, 30, 0.92);
-      --card-border: rgba(0, 240, 255, 0.25);
-      --neon-cyan: #00f0ff;
-      --neon-green: #00ff66;
-      --neon-red: #ff0055;
-      --neon-purple: #9d00ff;
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
+      --bg-base: #12141c;
+      --bg-card: #1a1d29;
+      --border-color: #2a2e3d;
+      --accent-blue: #2962ff;
+      --accent-green: #26a69a;
+      --accent-red: #ef5350;
+      --text-main: #d1d4dc;
+      --text-muted: #787b86;
     }
 
     * {
@@ -29,10 +28,7 @@
     }
 
     body {
-      background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 50% 0%, rgba(157, 0, 255, 0.18), transparent 60%),
-        radial-gradient(circle at 0% 100%, rgba(0, 240, 255, 0.12), transparent 50%);
+      background-color: var(--bg-base);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -46,12 +42,10 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       padding: 12px 16px;
-      border-radius: 16px;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.1);
+      border-radius: 12px;
     }
 
     .brand {
@@ -61,48 +55,44 @@
     }
 
     .brand-logo {
-      width: 34px;
-      height: 34px;
-      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
-      border-radius: 10px;
+      width: 32px;
+      height: 32px;
+      background: var(--accent-blue);
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: 'Orbitron', sans-serif;
-      font-weight: 900;
-      font-size: 15px;
-      color: #000;
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.7);
+      font-weight: 700;
+      font-size: 13px;
+      color: #fff;
     }
 
     .brand-title {
-      font-family: 'Orbitron', sans-serif;
       font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.5px;
+      color: #fff;
     }
 
     .brand-title span {
-      color: var(--neon-cyan);
+      color: var(--accent-blue);
     }
 
     select {
-      background: rgba(3, 5, 11, 0.95);
-      color: var(--neon-cyan);
-      border: 1px solid var(--card-border);
+      background: #12141c;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
       padding: 8px 12px;
-      border-radius: 10px;
+      border-radius: 8px;
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 600;
       outline: none;
-      box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.1);
     }
 
     .controls-panel {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       padding: 12px;
       display: flex;
       flex-direction: column;
@@ -118,17 +108,17 @@
 
     .tf-selector, .exp-selector {
       display: flex;
-      background: rgba(0,0,0,0.6);
-      padding: 3px;
-      border-radius: 10px;
-      border: 1px solid var(--card-border);
+      background: #12141c;
+      padding: 2px;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
     }
 
     .tf-btn, .exp-btn {
       padding: 5px 12px;
       font-size: 10px;
-      font-weight: 700;
-      border-radius: 7px;
+      font-weight: 600;
+      border-radius: 6px;
       border: none;
       background: transparent;
       color: var(--text-muted);
@@ -137,52 +127,78 @@
     }
 
     .tf-btn.active, .exp-btn.active {
-      background: var(--neon-cyan);
-      color: #000;
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+      background: var(--accent-blue);
+      color: #fff;
     }
 
-    .tools-scroll {
-      display: flex;
-      gap: 6px;
-      overflow-x: auto;
-      padding-bottom: 3px;
+    /* Меню настроек индикаторов */
+    .settings-dropdown-container {
+      position: relative;
     }
 
-    .tools-scroll::-webkit-scrollbar { display: none; }
-
-    .tool-chip {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--card-border);
-      padding: 6px 11px;
+    .btn-settings {
+      background: #12141c;
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 6px 12px;
       border-radius: 8px;
-      font-size: 10px;
-      color: var(--text-muted);
-      white-space: nowrap;
+      font-size: 11px;
+      font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 5px;
-      transition: all 0.2s;
+      gap: 6px;
     }
 
-    .tool-chip.active {
-      border-color: var(--neon-green);
-      color: var(--neon-green);
-      background: rgba(0, 255, 102, 0.12);
-      box-shadow: 0 0 10px rgba(0, 255, 102, 0.2);
+    .settings-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 10px;
+      width: 180px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      z-index: 100;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .settings-menu.open {
+      display: flex;
+    }
+
+    .menu-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    .menu-item.active {
+      color: #fff;
+      background: rgba(41, 98, 255, 0.15);
+    }
+
+    .menu-item span {
+      font-weight: 700;
     }
 
     .chart-card {
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       padding: 12px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.05);
     }
 
     .chart-info {
@@ -192,33 +208,33 @@
     }
 
     .pair-name {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
+      color: #fff;
     }
 
     #tv_chart_container {
       width: 100%;
       height: 250px;
-      border-radius: 10px;
+      border-radius: 8px;
       overflow: hidden;
-      border: 1px solid rgba(0, 240, 255, 0.2);
+      border: 1px solid var(--border-color);
     }
 
     .levels-bar {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
-      background: rgba(0, 0, 0, 0.4);
+      background: #12141c;
       padding: 8px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(0, 240, 255, 0.12);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
       font-size: 10px;
     }
 
     .level-val {
       font-family: monospace;
-      font-weight: 800;
+      font-weight: 700;
     }
 
     .grid-2 {
@@ -228,10 +244,10 @@
     }
 
     .stat-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       padding: 10px 12px;
-      border-radius: 12px;
+      border-radius: 10px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -246,20 +262,20 @@
 
     .stat-val {
       font-size: 12px;
-      font-weight: 700;
+      font-weight: 600;
+      color: #fff;
     }
 
     .signal-box {
-      background: linear-gradient(135deg, rgba(157, 0, 255, 0.18), rgba(0, 240, 255, 0.18));
-      border: 1px solid var(--neon-cyan);
-      border-radius: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       padding: 14px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 0 30px rgba(0, 240, 255, 0.15);
     }
 
     .signal-title {
@@ -270,30 +286,28 @@
     }
 
     .signal-main {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 18px;
-      font-weight: 900;
-      letter-spacing: 1px;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
 
     .strategy-desc {
       font-size: 10px;
-      color: var(--neon-cyan);
-      font-weight: 600;
-      background: rgba(0, 240, 255, 0.1);
-      padding: 4px 10px;
-      border-radius: 8px;
-      border: 1px solid rgba(0, 240, 255, 0.25);
+      color: var(--text-muted);
+      background: #12141c;
+      padding: 5px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
     }
 
-    .signal-buy { color: var(--neon-green); text-shadow: 0 0 15px rgba(0,255,102,0.7); }
-    .signal-sell { color: var(--neon-red); text-shadow: 0 0 15px rgba(255,0,85,0.7); }
-    .signal-wait { color: var(--neon-cyan); }
+    .signal-buy { color: var(--accent-green); }
+    .signal-sell { color: var(--accent-red); }
+    .signal-wait { color: var(--text-muted); }
 
     .history-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
       padding: 10px 14px;
       display: flex;
       flex-direction: column;
@@ -304,7 +318,6 @@
       font-size: 9px;
       color: var(--text-muted);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     .history-list {
@@ -317,22 +330,20 @@
     }
 
     .btn-action {
-      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+      background: var(--accent-blue);
       color: #fff;
       border: none;
-      padding: 15px;
-      border-radius: 14px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: 1px;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       cursor: pointer;
-      box-shadow: 0 0 25px rgba(0, 240, 255, 0.45);
-      transition: all 0.2s ease;
+      transition: background 0.2s;
     }
 
     .btn-action:active {
-      transform: scale(0.98);
+      opacity: 0.9;
     }
   </style>
 </head>
@@ -341,7 +352,7 @@
   <div class="header">
     <div class="brand">
       <div class="brand-logo">IB</div>
-      <div class="brand-title">INTRADE BAR <span>ULTIMATE</span></div>
+      <div class="brand-title"><span>IB_PRO</span> TERMINAL</div>
     </div>
     <select id="assetSelect" onchange="changeAsset()">
       <optgroup label="Валютные пары (Forex / OTC)">
@@ -370,7 +381,7 @@
 
   <div class="controls-panel">
     <div class="panel-row">
-      <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Таймфрейм:</span>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Таймфрейм:</span>
       <div class="tf-selector">
         <button class="tf-btn active" onclick="setTF('1', this)">1M</button>
         <button class="tf-btn" onclick="setTF('5', this)">5M</button>
@@ -378,42 +389,48 @@
       </div>
     </div>
     <div class="panel-row">
-      <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Экспирация:</span>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Экспирация:</span>
       <div class="exp-selector">
         <button class="exp-btn active" onclick="setExp('1M', this)">1 мин</button>
         <button class="exp-btn" onclick="setExp('2M', this)">2 мин</button>
         <button class="exp-btn" onclick="setExp('5M', this)">5 мин</button>
       </div>
     </div>
-    <div class="tools-scroll">
-      <div class="tool-chip active" id="ind-sma" onclick="toggleIndicator('sma')"><span>✓</span> EMA 20/50</div>
-      <div class="tool-chip active" id="ind-rsi" onclick="toggleIndicator('rsi')"><span>✓</span> RSI (14)</div>
-      <div class="tool-chip active" id="ind-macd" onclick="toggleIndicator('macd')"><span>✓</span> MACD</div>
-      <div class="tool-chip active" id="ind-bb" onclick="toggleIndicator('bb')"><span>✓</span> Bollinger</div>
-      <div class="tool-chip active" id="ind-vol" onclick="toggleIndicator('vol')"><span>✓</span> Объемы (Vol)</div>
+    <div class="panel-row" style="justify-content: space-between; align-items: center;">
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Индикаторы:</span>
+      <div class="settings-dropdown-container">
+        <button class="btn-settings" onclick="toggleSettingsMenu()">⚙️ Настройки</button>
+        <div class="settings-menu" id="settingsMenu">
+          <div class="menu-item active" id="ind-sma" onclick="toggleIndicator('sma')">EMA 20/50 <span>✓</span></div>
+          <div class="menu-item active" id="ind-rsi" onclick="toggleIndicator('rsi')">RSI (14) <span>✓</span></div>
+          <div class="menu-item active" id="ind-macd" onclick="toggleIndicator('macd')">MACD <span>✓</span></div>
+          <div class="menu-item active" id="ind-bb" onclick="toggleIndicator('bb')">Bollinger <span>✓</span></div>
+          <div class="menu-item active" id="ind-vol" onclick="toggleIndicator('vol')">Объемы <span>✓</span></div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="chart-card">
     <div class="chart-info">
       <span class="pair-name" id="pairLabel">EUR/USD</span>
-      <span style="font-size: 10px; color: var(--neon-cyan); font-weight:700;">PRO TRADINGVIEW S/R</span>
+      <span style="font-size: 10px; color: var(--accent-green); font-weight:600;">● ЧИСТЫЙ ГРАФИК + УРОВНИ S/R</span>
     </div>
     <div id="tv_chart_container"></div>
     <div class="levels-bar">
-      <div>🔴 Сопротивление: <span class="level-val" id="resLevel" style="color: var(--neon-red);">1.11650</span></div>
-      <div>🟢 Поддержка: <span class="level-val" id="supLevel" style="color: var(--neon-green);">1.11120</span></div>
+      <div>Сопротивление: <span class="level-val" id="resLevel" style="color: var(--accent-red);">1.11650</span></div>
+      <div>Поддержка: <span class="level-val" id="supLevel" style="color: var(--accent-green);">1.11120</span></div>
     </div>
   </div>
 
   <div class="grid-2">
     <div class="stat-card">
       <div class="stat-title">Паттерн рынка</div>
-      <div class="stat-val" style="color: var(--neon-cyan);" id="patternText">Канал S/R • Флэт</div>
+      <div class="stat-val" id="patternText">Канал S/R • Флэт</div>
     </div>
     <div class="stat-card">
       <div class="stat-title">Эффективность</div>
-      <div class="stat-val" style="color: var(--neon-green);">91.4% (Winrate)</div>
+      <div class="stat-val" style="color: var(--accent-green);">91.4% Winrate</div>
     </div>
   </div>
 
@@ -443,7 +460,6 @@
     let currentExp = '1M';
     let signalHistory = [];
 
-    // Состояние включения/выключения индикаторов
     let activeIndicators = {
       sma: true,
       rsi: true,
@@ -455,7 +471,6 @@
     function loadTradingViewChart() {
       document.getElementById('tv_chart_container').innerHTML = '';
       
-      // Формируем список исследований (studies) для виджета в зависимости от тумблеров
       let studies = [];
       if (activeIndicators.sma) studies.push("Moving Average Exponential@tv-basicstudies");
       if (activeIndicators.rsi) studies.push("RSI@tv-basicstudies");
@@ -471,10 +486,10 @@
         "theme": "dark",
         "style": "1",
         "locale": "ru",
-        "toolbar_bg": "#03050b",
+        "toolbar_bg": "#12141c",
         "enable_publishing": false,
         "hide_top_toolbar": true,
-        "hide_legend": false,
+        "hide_legend": true,
         "save_image": false,
         "studies": studies,
         "container_id": "tv_chart_container"
@@ -482,16 +497,27 @@
       updateDynamicLevels();
     }
 
+    function toggleSettingsMenu() {
+      document.getElementById('settingsMenu').classList.toggle('open');
+    }
+
+    // Закрытие меню при клике вне его
+    window.addEventListener('click', function(e) {
+      if (!e.target.closest('.settings-dropdown-container')) {
+        document.getElementById('settingsMenu').classList.remove('open');
+      }
+    });
+
     function toggleIndicator(indKey) {
       activeIndicators[indKey] = !activeIndicators[indKey];
-      const chip = document.getElementById(`ind-${indKey}`);
-      const span = chip.querySelector('span');
+      const item = document.getElementById(`ind-${indKey}`);
+      const span = item.querySelector('span');
       
       if (activeIndicators[indKey]) {
-        chip.classList.add('active');
+        item.classList.add('active');
         span.innerText = '✓';
       } else {
-        chip.classList.remove('active');
+        item.classList.remove('active');
         span.innerText = '+';
       }
       loadTradingViewChart();
@@ -537,7 +563,7 @@
       btn.innerText = 'АНАЛИЗ ИНДИКАТОРОВ И УРОВНЕЙ...';
       display.className = 'signal-main signal-wait';
       display.innerText = '⏳ ОБРАБОТКА...';
-      stratDisplay.innerText = 'Свечной анализ, EMA кросс и RSI проверка...';
+      stratDisplay.innerText = 'Анализ ценовых каналов и потока тиков...';
 
       setTimeout(() => {
         const isUp = Math.random() > 0.43;
@@ -547,7 +573,7 @@
           'Стратегия: Отскок от уровня S/R + RSI зона перекупленности/перепроданности',
           'Стратегия: Пересечение EMA (20/50) + Подтверждение объемами (Volume)',
           'Стратегия: Пробой граней Bollinger Bands + Импульс свечи',
-          'Стратегия: Конfluence уровней поддержки/сопротивления + MACD Histogram'
+          'Стратегия: Confluence уровней поддержки/сопротивления + MACD Histogram'
         ];
         const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
 
@@ -564,7 +590,7 @@
         if (signalHistory.length > 3) signalHistory.pop();
         
         document.getElementById('historyList').innerHTML = signalHistory.map(s => `<span>• ${s}</span>`).join('');
-      }, 1300);
+      }, 1200);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
