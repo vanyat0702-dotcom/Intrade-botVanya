@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Intrade Bar Pro Terminal Live</title>
+  <title>Intrade Bar Pro Terminal</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -360,7 +360,7 @@
         <span class="payout-badge" id="payoutBadge">85%</span>
       </div>
       <div class="price-container">
-        <div class="price-value" id="priceDisplay">1.08542</div>
+        <div class="price-value" id="priceDisplay">1.11340</div>
         <div class="price-diff" id="priceDiff" style="color: var(--neon-green);">+0.00%</div>
       </div>
     </div>
@@ -405,20 +405,20 @@
     let candles = [];
     let currentAsset = 'EURUSD_OTC';
     let currentTF = '5M';
-    let basePrice = 1.0850;
     let ws = null;
     let liveTimer = null;
 
+    // Точные актуальные базы цен под рынок
     const assetConfigs = {
-      'EURUSD_OTC': { name: 'EUR/USD OTC', base: 1.0850, digits: 5, payout: '85%' },
-      'GBPUSD_OTC': { name: 'GBP/USD OTC', base: 1.2650, digits: 5, payout: '85%' },
-      'USDJPY_OTC': { name: 'USD/JPY OTC', base: 154.50, digits: 2, payout: '85%' },
-      'AUDUSD_OTC': { name: 'AUD/USD OTC', base: 0.6550, digits: 5, payout: '85%' },
-      'EURUSD': { name: 'EUR/USD', base: 1.0850, digits: 5, payout: '82%' },
-      'GBPUSD': { name: 'GBP/USD', base: 1.2650, digits: 5, payout: '80%' },
-      'USDJPY': { name: 'USD/JPY', base: 154.50, digits: 2, payout: '82%' },
-      'BTCUSDT': { name: 'BTC/USDT', base: 65000.0, digits: 2, payout: '85%', binance: 'btcusdt' },
-      'ETHUSDT': { name: 'ETH/USDT', base: 3500.0, digits: 2, payout: '85%', binance: 'ethusdt' }
+      'EURUSD_OTC': { name: 'EUR/USD OTC', base: 1.1134, digits: 5, payout: '85%' },
+      'GBPUSD_OTC': { name: 'GBP/USD OTC', base: 1.3320, digits: 5, payout: '85%' },
+      'USDJPY_OTC': { name: 'USD/JPY OTC', base: 152.80, digits: 2, payout: '85%' },
+      'AUDUSD_OTC': { name: 'AUD/USD OTC', base: 0.6580, digits: 5, payout: '85%' },
+      'EURUSD': { name: 'EUR/USD', base: 1.1134, digits: 5, payout: '82%' },
+      'GBPUSD': { name: 'GBP/USD', base: 1.3320, digits: 5, payout: '80%' },
+      'USDJPY': { name: 'USD/JPY', base: 152.80, digits: 2, payout: '82%' },
+      'BTCUSDT': { name: 'BTC/USDT', base: 67500.0, digits: 2, payout: '85%', binance: 'btcusdt' },
+      'ETHUSDT': { name: 'ETH/USDT', base: 2600.0, digits: 2, payout: '85%', binance: 'ethusdt' }
     };
 
     function initCanvas() {
@@ -431,15 +431,14 @@
     function generateInitialCandles() {
       candles = [];
       const conf = assetConfigs[currentAsset];
-      basePrice = conf.base;
-      let curr = basePrice;
+      let curr = conf.base;
 
-      for (let i = 0; i < 30; i++) {
-        let step = conf.digits === 2 ? 2.5 : 0.0008;
+      for (let i = 0; i < 28; i++) {
+        let step = conf.digits === 2 ? 3.0 : 0.0009;
         let open = curr;
-        let close = open + (Math.random() - 0.49) * step;
-        let high = Math.max(open, close) + Math.random() * (step * 0.5);
-        let low = Math.min(open, close) - Math.random() * (step * 0.5);
+        let close = open + (Math.random() - 0.48) * step;
+        let high = Math.max(open, close) + Math.random() * (step * 0.6);
+        let low = Math.min(open, close) - Math.random() * (step * 0.6);
         candles.push({ open, high, low, close });
         curr = close;
       }
@@ -457,10 +456,10 @@
       const lows = candles.map(c => c.low);
       const maxP = Math.max(...highs);
       const minP = Math.min(...lows);
-      const range = (maxP - minP) || 1;
+      const range = (maxP - minP) || 0.0001;
 
       // Grid
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.06)';
       ctx.lineWidth = 1;
       for (let y = 20; y < h; y += 35) {
         ctx.beginPath();
@@ -512,29 +511,25 @@
       const conf = assetConfigs[currentAsset];
 
       if (conf.binance) {
-        // Real Binance WebSocket
         ws = new WebSocket(`wss://stream.binance.com:9443/ws/${conf.binance}@ticker`);
         ws.onmessage = (event) => {
           const data = JSON.parse(event.data);
-          const price = parseFloat(data.c);
-          applyTick(price);
+          applyTick(parseFloat(data.c));
         };
       } else {
-        // Simulated Live Tick Stream for Forex / OTC
+        // Живой движок тиков для Forex / OTC, который заставляет свечи плавно двигаться каждую секунду
         liveTimer = setInterval(() => {
           const lastCandle = candles[candles.length - 1];
-          const step = conf.digits === 2 ? 0.2 : 0.00015;
-          const newPrice = lastCandle.close + (Math.random() - 0.49) * step;
+          const step = conf.digits === 2 ? 0.15 : 0.00012;
+          const newPrice = lastCandle.close + (Math.random() - 0.48) * step;
           applyTick(newPrice);
-        }, 1000);
+        }, 800);
       }
     }
 
     function applyTick(price) {
-      const conf = assetConfigs[currentAsset];
       let last = candles[candles.length - 1];
       
-      // Update active candle
       last.close = price;
       if (price > last.high) last.high = price;
       if (price < last.low) last.low = price;
@@ -542,10 +537,10 @@
       updatePriceView(price);
       drawChart();
 
-      // Spawn a new candle every 15 ticks to keep it moving live
-      if (Math.random() < 0.1) {
+      // Динамическое добавление новой свечи каждые несколько тиков
+      if (Math.random() < 0.12) {
         candles.push({ open: price, high: price, low: price, close: price });
-        if (candles.length > 35) candles.shift();
+        if (candles.length > 32) candles.shift();
       }
     }
 
@@ -595,7 +590,6 @@
 
     window.addEventListener('resize', () => { initCanvas(); drawChart(); });
     
-    // Init
     initCanvas();
     generateInitialCandles();
     drawChart();
