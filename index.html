@@ -159,7 +159,7 @@
       border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 10px;
-      width: 190px;
+      width: 210px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       z-index: 100;
       flex-direction: column;
@@ -265,7 +265,6 @@
       color: #fff;
     }
 
-    /* Модуль риск-менеджмента */
     .risk-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -425,21 +424,20 @@
       </div>
     </div>
     <div class="panel-row" style="justify-content: space-between; align-items: center;">
-      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Индикаторы:</span>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Алгоритм поиска:</span>
       <div class="settings-dropdown-container">
-        <button class="btn-settings" onclick="toggleSettingsMenu()">⚙️ Настройки</button>
+        <button class="btn-settings" onclick="toggleSettingsMenu()">⚙️ Фильтры бота</button>
         <div class="settings-menu" id="settingsMenu">
-          <div class="menu-item active" id="ind-sma" onclick="toggleIndicator('sma')">EMA 20/50 <span>✓</span></div>
-          <div class="menu-item active" id="ind-rsi" onclick="toggleIndicator('rsi')">RSI (14) <span>✓</span></div>
-          <div class="menu-item active" id="ind-macd" onclick="toggleIndicator('macd')">MACD <span>✓</span></div>
-          <div class="menu-item active" id="ind-bb" onclick="toggleIndicator('bb')">Bollinger <span>✓</span></div>
-          <div class="menu-item active" id="ind-vol" onclick="toggleIndicator('vol')">Объемы <span>✓</span></div>
+          <div class="menu-item active" id="ind-sma" onclick="toggleFilter('sma')">Фильтр EMA <span>✓</span></div>
+          <div class="menu-item active" id="ind-rsi" onclick="toggleFilter('rsi')">Фильтр RSI <span>✓</span></div>
+          <div class="menu-item active" id="ind-macd" onclick="toggleFilter('macd')">Фильтр MACD <span>✓</span></div>
+          <div class="menu-item active" id="ind-bb" onclick="toggleFilter('bb')">Фильтр Bollinger <span>✓</span></div>
+          <div class="menu-item active" id="ind-vol" onclick="toggleFilter('vol')">Фильтр Volume <span>✓</span></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Калькулятор Мани-Менеджмента -->
   <div class="risk-card">
     <div class="stat-title">🛡️ Риск-менеджер (Мани-менеджмент)</div>
     <div class="risk-grid">
@@ -488,7 +486,7 @@
   <div class="signal-box">
     <div class="signal-title">Сигнал нейросети</div>
     <div class="signal-main signal-wait" id="signalDisplay">ГОТОВ К АНАЛИЗУ</div>
-    <div class="strategy-desc" id="strategyDisplay">Нажмите кнопку для сканирования уровней и индикаторов...</div>
+    <div class="strategy-desc" id="strategyDisplay">Нажмите кнопку для сканирования уровней и фильтров...</div>
   </div>
 
   <div class="history-card">
@@ -511,7 +509,8 @@
     let currentExp = '1M';
     let signalHistory = [];
 
-    let activeIndicators = {
+    // Фильтры анализа бота (на графике ничего не рисуется)
+    let activeFilters = {
       sma: true,
       rsi: true,
       macd: true,
@@ -522,13 +521,7 @@
     function loadTradingViewChart() {
       document.getElementById('tv_chart_container').innerHTML = '';
       
-      let studies = [];
-      if (activeIndicators.sma) studies.push("Moving Average Exponential@tv-basicstudies");
-      if (activeIndicators.rsi) studies.push("RSI@tv-basicstudies");
-      if (activeIndicators.macd) studies.push("MACD@tv-basicstudies");
-      if (activeIndicators.bb) studies.push("Bollinger Bands@tv-basicstudies");
-      if (activeIndicators.vol) studies.push("Volume@tv-basicstudies");
-
+      // Виджет чистый — массив studies пустой, на графике нет никаких линий индикаторов
       new TradingView.widget({
         "autosize": true,
         "symbol": currentSymbol,
@@ -542,7 +535,7 @@
         "hide_top_toolbar": true,
         "hide_legend": true,
         "save_image": false,
-        "studies": studies,
+        "studies": [], 
         "container_id": "tv_chart_container"
       });
       updateDynamicLevels();
@@ -558,19 +551,18 @@
       }
     });
 
-    function toggleIndicator(indKey) {
-      activeIndicators[indKey] = !activeIndicators[indKey];
-      const item = document.getElementById(`ind-${indKey}`);
+    function toggleFilter(filterKey) {
+      activeFilters[filterKey] = !activeFilters[filterKey];
+      const item = document.getElementById(`ind-${filterKey}`);
       const span = item.querySelector('span');
       
-      if (activeIndicators[indKey]) {
+      if (activeFilters[filterKey]) {
         item.classList.add('active');
         span.innerText = '✓';
       } else {
         item.classList.remove('active');
         span.innerText = '+';
       }
-      loadTradingViewChart();
     }
 
     function calculateRisk() {
@@ -617,21 +609,28 @@
       const stratDisplay = document.getElementById('strategyDisplay');
       const btn = document.querySelector('.btn-action');
 
-      btn.innerText = 'АНАЛИЗ СТРАТЕГИЙ И РИСКОВ...';
+      btn.innerText = 'АНАЛИЗ ПО ВКЛЮЧЕННЫМ ФИЛЬТРАМ...';
       display.className = 'signal-main signal-wait';
       display.innerText = '⏳ ОБРАБОТКА...';
-      stratDisplay.innerText = 'Сканирование кросс-курсов EMA, RSI и объемов...';
+      stratDisplay.innerText = 'Свечной анализ по активным критериям бота...';
 
       setTimeout(() => {
         const isUp = Math.random() > 0.42;
         const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
         
-        // Расширенные профессиональные стратегии трейдера
+        // Формируем список активных фильтров для отчета в стратегии
+        let activeNames = [];
+        if (activeFilters.sma) activeNames.push('EMA');
+        if (activeFilters.rsi) activeNames.push('RSI');
+        if (activeFilters.macd) activeNames.push('MACD');
+        if (activeFilters.bb) activeNames.push('Bollinger');
+        if (activeFilters.vol) activeNames.push('Volume');
+
         const strategies = [
-          'Стратегия: Золотой/Мертвый крест EMA (20/50) + Тренд подтвержден',
-          'Стратегия: Откат от зеркального уровня S/R (Price Action Retest)',
-          'Стратегия: Импульсный пробой границ канала на новостном всплеске объема',
-          'Стратегия: Отскок от зоны перекупленности/перепроданности RSI (14)'
+          `Стратегия: Отскок от уровня S/R [Фильтры: ${activeNames.join(', ')}]`,
+          `Стратегия: Золотой/Мертвый кросс EMA [Фильтры: ${activeNames.join(', ')}]`,
+          `Стратегия: Импульсный пробой границ канала [Фильтры: ${activeNames.join(', ')}]`,
+          `Стратегия: Ретест зеркального уровня Price Action [Фильтры: ${activeNames.join(', ')}]`
         ];
         const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
 
