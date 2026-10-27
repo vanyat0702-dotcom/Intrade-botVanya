@@ -212,7 +212,6 @@
       color: #fff;
     }
 
-    /* Шкала до конца свечи */
     .candle-timer-bar {
       width: 100%;
       height: 4px;
@@ -227,7 +226,6 @@
       width: 100%;
       height: 100%;
       background: var(--accent-blue);
-      width: 100%;
       transition: width 1s linear;
     }
 
@@ -482,7 +480,7 @@
   <div class="chart-card">
     <div class="chart-info">
       <span class="pair-name" id="pairLabel">EUR/USD</span>
-      <span style="font-size: 10px; color: var(--accent-green); font-weight:600;" id="candleTimerText">Закрытие свечи: 60с</span>
+      <span style="font-size: 10px; color: var(--accent-green); font-weight:600;" id="candleTimerText">Закрытие свечи: --с</span>
     </div>
     <div class="candle-timer-bar">
       <div class="candle-timer-fill" id="candleTimerFill"></div>
@@ -527,7 +525,7 @@
     }
 
     let currentSymbol = 'FX:EURUSD';
-    let currentInterval = '1';
+    let currentInterval = '1'; // '1', '5', '15'
     let currentExp = '1M';
     let signalHistory = [];
 
@@ -539,26 +537,31 @@
       vol: true
     };
 
-    // Таймер шкалы свечи (60 секунд минутного бара)
-    let candleSecondsLeft = 60;
+    // Динамический таймер под выбранный таймфрейм (1M, 5M, 15M)
     setInterval(() => {
       const now = new Date();
-      let sec = now.getSeconds();
-      let left = 60 - sec;
-      if (left === 60) left = 0;
+      const totalSecInTf = parseInt(currentInterval) * 60;
+      const currentTotalSec = (now.getMinutes() * 60) + now.getSeconds();
       
-      candleSecondsLeft = left;
-      const pct = (left / 60) * 100;
+      let elapsedInCandle = currentTotalSec % totalSecInTf;
+      let left = totalSecInTf - elapsedInCandle;
+      
+      const pct = (left / totalSecInTf) * 100;
       
       const fill = document.getElementById('candleTimerFill');
       const text = document.getElementById('candleTimerText');
       if (fill) fill.style.width = pct + '%';
+      
       if (text) {
+        let minutesLeft = Math.floor(left / 60);
+        let secondsLeft = left % 60;
+        let timeStr = minutesLeft > 0 ? `${minutesLeft}м ${secondsLeft}с` : `${secondsLeft}с`;
+
         if (left <= 20 && left > 0) {
-          text.innerHTML = `🔥 Зона входа (${left}с до закрытия)`;
+          text.innerHTML = `🔥 Зона входа (${timeStr} до закрытия)`;
           text.style.color = 'var(--accent-red)';
         } else {
-          text.innerHTML = `Закрытие свечи: ${left}с`;
+          text.innerHTML = `Закрытие свечи: ${timeStr}`;
           text.style.color = 'var(--accent-green)';
         }
       }
@@ -653,10 +656,10 @@
       const stratDisplay = document.getElementById('strategyDisplay');
       const btn = document.querySelector('.btn-action');
 
-      btn.innerText = 'АНАЛИЗ ФИЛЬТРОВ И ЗОНЫ ЗАКРЫТИЯ...';
+      btn.innerText = 'АНАЛИЗ ТАЙМФРЕЙМА И ФИЛЬТРОВ...';
       display.className = 'signal-main signal-wait';
       display.innerText = '⏳ АНАЛИЗ...';
-      stratDisplay.innerText = 'Ожидание старта новой свечи для входа...';
+      stratDisplay.innerText = `Сканирование ${currentInterval}M свечи в 20-секундном окне...`;
 
       setTimeout(() => {
         const isUp = Math.random() > 0.42;
@@ -669,25 +672,26 @@
         if (activeFilters.bb) activeNames.push('Bollinger');
         if (activeFilters.vol) activeNames.push('Volume');
 
+        const tfText = `${currentInterval}M свеча`;
         const strategies = [
-          `Прогноз на след. свечу: Отскок от уровня S/R [${activeNames.join(', ')}]`,
-          `Прогноз на след. свечу: Кросс EMA [${activeNames.join(', ')}]`,
-          `Прогноз на след. свечу: Пробой канала [${activeNames.join(', ')}]`,
-          `Прогноз на след. свечу: Ретест Price Action [${activeNames.join(', ')}]`
+          `Прогноз на след. свечу (${tfText}): Отскок от S/R [${activeNames.join(', ')}]`,
+          `Прогноз на след. свечу (${tfText}): Кросс EMA [${activeNames.join(', ')}]`,
+          `Прогноз на след. свечу (${tfText}): Пробой канала [${activeNames.join(', ')}]`,
+          `Прогноз на след. свечу (${tfText}): Ретест Price Action [${activeNames.join(', ')}]`
         ];
         const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
 
-        display.innerText = `${dir} • НА СЛЕД. СВЕЧУ (${currentExp})`;
+        display.innerText = `${dir} • НА СЛЕД. ${currentInterval}M СВЕЧУ`;
         display.className = `signal-main ${isUp ? 'signal-buy' : 'signal-sell'}`;
         stratDisplay.innerText = selectedStrat;
         btn.innerText = 'ПОЛУЧИТЬ СИГНАЛ (НА СЛЕД. СВЕЧУ)';
 
-        const patterns = ['Вход на открытии свечи', 'EMA Кросс импульс', 'Пин-бар по тренду', 'Объемный пробой'];
+        const patterns = [`Вход на открытии ${currentInterval}M бара`, 'EMA Кросс импульс', 'Пин-бар по тренду', 'Объемный пробой'];
         document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
 
         const timeNow = new Date().toLocaleTimeString();
         const stakeVal = document.getElementById('recomStake').innerText;
-        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} на след. свечу (${currentExp}) | Сумма: ${stakeVal}`);
+        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} на след. ${currentInterval}M (${currentExp}) | Сумма: ${stakeVal}`);
         if (signalHistory.length > 3) signalHistory.pop();
         
         document.getElementById('historyList').innerHTML = signalHistory.map(s => `<span>• ${s}</span>`).join('');
