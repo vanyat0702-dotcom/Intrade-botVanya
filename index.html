@@ -1,749 +1,525 @@
-```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Intrade Bar Pro Trading Terminal</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Orbitron & Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Intrade Bar Pro Terminal</title>
+  <script src="[https://telegram.org/js/telegram-web-app.js](https://telegram.org/js/telegram-web-app.js)"></script>
+  <link href="[https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap](https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap)" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #05070e;
+      --card-bg: rgba(13, 17, 39, 0.7);
+      --card-border: rgba(0, 240, 255, 0.15);
+      --neon-cyan: #00f0ff;
+      --neon-green: #00ff66;
+      --neon-red: #ff0055;
+      --neon-purple: #7000ff;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+    }
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        cyber: {
-                            dark: '#070913',
-                            card: '#0d1127',
-                            border: 'rgba(0, 229, 255, 0.18)',
-                            accent: '#00e5ff',
-                            bull: '#00ff88',
-                            bear: '#ff2a5f',
-                            purple: '#a855f7',
-                            gold: '#ffd700'
-                        }
-                    },
-                    fontFamily: {
-                        orbitron: ['Orbitron', 'sans-serif'],
-                        sans: ['Inter', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', sans-serif;
+      user-select: none;
+    }
 
-    <style>
-        /* Cyberpunk Custom Aesthetics & Canvas styling */
-        body {
-            background-color: #05070e;
-            background-image: 
-                radial-gradient(circle at 50% 0%, rgba(168, 85, 247, 0.15), transparent 50%),
-                radial-gradient(circle at 0% 100%, rgba(0, 229, 255, 0.12), transparent 40%),
-                linear-gradient(rgba(13, 17, 39, 0.4) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(13, 17, 39, 0.4) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px;
-            color: #f3f4f6;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(112, 0, 255, 0.15), transparent 70%),
+        radial-gradient(circle at 0% 100%, rgba(0, 240, 255, 0.1), transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      gap: 10px;
+      overflow-x: hidden;
+    }
 
-        /* Glassmorphism Cards */
-        .glass-panel {
-            background: rgba(13, 17, 39, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(0, 229, 255, 0.15);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-        }
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.05);
+    }
 
-        .glass-panel-glow {
-            position: relative;
-        }
-        .glass-panel-glow::before {
-            content: '';
-            position: absolute;
-            top: -1px; left: -1px; right: -1px; bottom: -1px;
-            background: linear-gradient(135deg, rgba(0, 229, 255, 0.4), transparent, rgba(168, 85, 247, 0.3));
-            border-radius: inherit;
-            z-index: -1;
-            opacity: 0.5;
-        }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        /* Glowing Effects */
-        .glow-bull {
-            box-shadow: 0 0 20px rgba(0, 255, 136, 0.4);
-        }
-        .glow-bear {
-            box-shadow: 0 0 20px rgba(255, 42, 95, 0.4);
-        }
-        .glow-cyan {
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
-        }
+    .brand-logo {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 14px;
+      color: #000;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
 
-        /* Animated Pulse Line */
-        @keyframes pulse-border {
-            0%, 100% { border-color: rgba(0, 229, 255, 0.3); }
-            50% { border-color: rgba(0, 229, 255, 0.8); }
-        }
-        .pulse-card {
-            animation: pulse-border 3s infinite ease-in-out;
-        }
+    .brand-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
 
-        /* Neon Custom Toggle Indicators */
-        .indicator-btn {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .indicator-btn.active {
-            background: rgba(0, 229, 255, 0.12);
-            border-color: #00e5ff;
-            color: #00e5ff;
-            box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
-        }
+    .brand-title span {
+      color: var(--neon-cyan);
+    }
 
-        /* Timeframe Buttons */
-        .tf-btn {
-            transition: all 0.2s;
-        }
-        .tf-btn.active {
-            background: linear-gradient(135deg, #00e5ff, #3b82f6);
-            color: #000;
-            font-weight: 800;
-            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
-        }
+    select {
+      background: rgba(5, 7, 14, 0.8);
+      color: var(--neon-cyan);
+      border: 1px solid var(--card-border);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      outline: none;
+    }
 
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(5, 7, 14, 0.8);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: rgba(0, 229, 255, 0.3);
-            border-radius: 4px;
-        }
+    /* Controls Bar */
+    .controls-panel {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
 
-        /* Scanline Overlay Effect */
-        .scanline {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0, 0, 0, 0.25) 50%, rgba(0, 0, 0, 0.25));
-            background-size: 100% 4px;
-            pointer-events: none;
-            opacity: 0.4;
-        }
+    .panel-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
 
-        canvas {
-            display: block;
-            touch-action: none;
-        }
-    </style>
+    .tf-selector {
+      display: flex;
+      background: rgba(0,0,0,0.4);
+      padding: 2px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    .tf-btn {
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 6px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .tf-btn.active {
+      background: var(--neon-cyan);
+      color: #000;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+    }
+
+    .tools-scroll {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .tools-scroll::-webkit-scrollbar { display: none; }
+
+    .tool-chip {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--card-border);
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .tool-chip.active {
+      border-color: var(--neon-green);
+      color: var(--neon-green);
+      background: rgba(0, 255, 102, 0.08);
+    }
+
+    /* Candlestick Chart Card */
+    .chart-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+    }
+
+    .chart-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pair-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .payout-badge {
+      font-size: 10px;
+      background: rgba(0, 255, 102, 0.15);
+      color: var(--neon-green);
+      border: 1px solid var(--neon-green);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .price-value {
+      font-family: monospace;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--neon-cyan);
+    }
+
+    canvas {
+      width: 100%;
+      height: 210px;
+      display: block;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    /* Grid Analytics */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 8px 10px;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .stat-title {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-val {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Action Banner */
+    .signal-box {
+      background: linear-gradient(135deg, rgba(112, 0, 255, 0.15), rgba(0, 240, 255, 0.15));
+      border: 1px solid var(--neon-cyan);
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
+    }
+
+    .signal-title {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .signal-main {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      letter-spacing: 1px;
+    }
+
+    .signal-buy { color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.5); }
+    .signal-sell { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,0,85,0.5); }
+    .signal-wait { color: var(--neon-cyan); }
+
+    .btn-action {
+      background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-action:active {
+      transform: scale(0.98);
+    }
+  </style>
 </head>
-<body class="p-2 sm:p-4 min-h-screen flex flex-col justify-between max-w-lg mx-auto">
-
-    <!-- HEADER / APP BAR -->
-    <header class="glass-panel rounded-2xl p-3 mb-3 flex items-center justify-between relative overflow-hidden">
-        <div class="flex items-center gap-3">
-            <div class="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-600 to-purple-600 font-orbitron font-black text-white text-lg shadow-lg shadow-cyan-500/20 border border-white/20">
-                IB
-                <span class="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-bull opacity-75"></span>
-                  <span class="relative inline-flex rounded-full h-3 w-3 bg-cyber-bull"></span>
-                </span>
-            </div>
-            <div>
-                <div class="flex items-center gap-2">
-                    <h1 class="font-orbitron font-bold text-sm tracking-wide text-white">INTRADE BAR <span class="text-cyber-accent">PRO</span></h1>
-                    <span class="bg-purple-500/20 text-purple-300 text-[10px] px-1.5 py-0.5 rounded border border-purple-500/30 font-mono">v30.0</span>
-                </div>
-                <p class="text-[11px] text-gray-400 flex items-center gap-1.5">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-bull animate-pulse"></span>
-                    Cyber Signal Terminal
-                </p>
-            </div>
-        </div>
-
-        <!-- Asset & Category Selector Trigger -->
-        <div class="flex flex-col items-end">
-            <select id="assetSelect" onchange="changeAsset(this.value)" class="bg-slate-900/90 text-cyan-300 text-xs font-bold font-mono px-3 py-1.5 rounded-xl border border-cyan-500/30 focus:outline-none focus:border-cyan-400 cursor-pointer shadow-inner">
-                <optgroup label="🔥 Intrade Bar Special (OTC)">
-                    <option value="EUR/USD (OTC)">EUR/USD (OTC) - 85%</option>
-                    <option value="GBP/USD (OTC)">GBP/USD (OTC) - 85%</option>
-                    <option value="USD/JPY (OTC)">USD/JPY (OTC) - 82%</option>
-                    <option value="AUD/CAD (OTC)">AUD/CAD (OTC) - 82%</option>
-                </optgroup>
-                <optgroup label="💱 Major Forex">
-                    <option value="EUR/USD">EUR/USD - 80%</option>
-                    <option value="GBP/USD">GBP/USD - 80%</option>
-                    <option value="USD/CHF">USD/CHF - 78%</option>
-                    <option value="USD/CAD">USD/CAD - 78%</option>
-                </optgroup>
-                <optgroup label="⚡ Crypto Market">
-                    <option value="BTC/USD">BTC/USD - 85%</option>
-                    <option value="ETH/USD">ETH/USD - 82%</option>
-                    <option value="SOL/USD">SOL/USD - 80%</option>
-                </optgroup>
-            </select>
-        </div>
-    </header>
-
-    <!-- MAIN CONTROL BAR (Timeframe & Indicator Toggles) -->
-    <section class="glass-panel rounded-2xl p-3 mb-3 flex flex-col gap-2.5">
-        <!-- Timeframes & Status Bar -->
-        <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-1 text-[11px] font-mono text-gray-400">
-                <i class="fa-solid fa-clock text-cyber-accent"></i>
-                <span>ТФ:</span>
-            </div>
-            <div class="flex items-center bg-slate-950/80 p-1 rounded-xl border border-white/5 w-full max-w-[220px]">
-                <button onclick="setTimeframe('1M')" id="tf-1M" class="tf-btn flex-1 py-1 rounded-lg text-xs text-center text-gray-400 font-mono font-bold">1M</button>
-                <button onclick="setTimeframe('5M')" id="tf-5M" class="tf-btn active flex-1 py-1 rounded-lg text-xs text-center text-gray-400 font-mono font-bold">5M</button>
-                <button onclick="setTimeframe('15M')" id="tf-15M" class="tf-btn flex-1 py-1 rounded-lg text-xs text-center text-gray-400 font-mono font-bold">15M</button>
-            </div>
-        </div>
-
-        <!-- Indicator Toggles Grid -->
-        <div class="grid grid-cols-5 gap-1.5">
-            <button onclick="toggleIndicator('rsi')" id="ind-rsi" class="indicator-btn active py-1.5 px-1 rounded-xl text-[10px] font-mono font-medium flex flex-col items-center gap-0.5">
-                <i class="fa-solid fa-chart-line text-[11px]"></i>
-                <span>RSI(14)</span>
-            </button>
-            <button onclick="toggleIndicator('macd')" id="ind-macd" class="indicator-btn active py-1.5 px-1 rounded-xl text-[10px] font-mono font-medium flex flex-col items-center gap-0.5">
-                <i class="fa-solid fa-sliders text-[11px]"></i>
-                <span>MACD</span>
-            </button>
-            <button onclick="toggleIndicator('bollinger')" id="ind-bollinger" class="indicator-btn active py-1.5 px-1 rounded-xl text-[10px] font-mono font-medium flex flex-col items-center gap-0.5">
-                <i class="fa-solid fa-water text-[11px]"></i>
-                <span>B.Bands</span>
-            </button>
-            <button onclick="toggleIndicator('sr')" id="ind-sr" class="indicator-btn active py-1.5 px-1 rounded-xl text-[10px] font-mono font-medium flex flex-col items-center gap-0.5">
-                <i class="fa-solid fa-grip-lines text-[11px]"></i>
-                <span>S/R Уровни</span>
-            </button>
-            <button onclick="toggleIndicator('trend')" id="ind-trend" class="indicator-btn active py-1.5 px-1 rounded-xl text-[10px] font-mono font-medium flex flex-col items-center gap-0.5">
-                <i class="fa-solid fa-compass text-[11px]"></i>
-                <span>Тренд</span>
-            </button>
-        </div>
-    </section>
-
-    <!-- CANDLESTICK CHART CONTAINER -->
-    <main class="glass-panel pulse-card rounded-2xl p-3 mb-3 flex flex-col gap-2 relative overflow-hidden">
-        <div class="scanline"></div>
-
-        <!-- Asset Title Header inside Chart -->
-        <div class="flex items-center justify-between z-10">
-            <div class="flex items-center gap-2">
-                <span id="chartSymbol" class="font-orbitron font-extrabold text-base tracking-wider text-white">EUR/USD (OTC)</span>
-                <span id="payoutBadge" class="bg-cyber-bull/15 text-cyber-bull text-[11px] font-mono px-2 py-0.5 rounded-full border border-cyber-bull/30 font-bold">Выплата: 85%</span>
-            </div>
-            <div class="text-right">
-                <div id="livePrice" class="font-mono font-bold text-base text-cyber-bull">1.08542</div>
-                <div id="priceChange" class="text-[10px] font-mono text-cyber-bull">+0.04%</div>
-            </div>
-        </div>
-
-        <!-- CANVAS ENGINE DISPLAY -->
-        <div class="relative w-full h-[230px] rounded-xl bg-slate-950/90 overflow-hidden border border-cyan-500/20">
-            <canvas id="candlestickCanvas" class="w-full h-full"></canvas>
-
-            <!-- Chart Overlays & HUD Info -->
-            <div class="absolute top-2 left-2 flex flex-col gap-1 text-[9px] font-mono text-gray-400 pointer-events-none">
-                <div class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded border border-white/10">
-                    <span class="w-2 h-2 rounded-full bg-cyan-400"></span> MA(20): <span id="maValue" class="text-cyan-300">1.08530</span>
-                </div>
-                <div id="rsiHud" class="flex items-center gap-1.5 bg-slate-900/80 px-2 py-0.5 rounded border border-white/10">
-                    <span class="w-2 h-2 rounded-full bg-purple-400"></span> RSI: <span id="rsiValue" class="text-purple-300">58.4</span>
-                </div>
-            </div>
-
-            <div class="absolute bottom-2 left-2 text-[9px] font-mono text-gray-400 bg-slate-900/80 px-2 py-0.5 rounded border border-white/10 pointer-events-none">
-                VOL: <span id="volValue" class="text-gray-200">1,284</span>
-            </div>
-        </div>
-
-        <!-- Live Pattern & Volatility Detector Panel -->
-        <div class="grid grid-cols-2 gap-2 text-xs font-mono pt-1 border-t border-white/5 z-10">
-            <div class="bg-slate-950/60 p-2 rounded-xl border border-white/5">
-                <div class="text-[10px] text-gray-400">Рыночный паттерн:</div>
-                <div id="patternText" class="text-cyber-gold font-bold flex items-center gap-1.5 mt-0.5">
-                    <i class="fa-solid fa-microchip animate-spin text-[10px]"></i>
-                    <span>Поиск паттерна...</span>
-                </div>
-            </div>
-            <div class="bg-slate-950/60 p-2 rounded-xl border border-white/5">
-                <div class="text-[10px] text-gray-400">Волатильность:</div>
-                <div id="volatilityText" class="text-cyber-bull font-bold flex items-center gap-1.5 mt-0.5">
-                    <i class="fa-solid fa-shield-halved text-[10px]"></i>
-                    <span>Умеренная (Безопасно)</span>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- SIGNAL GENERATOR SECTION -->
-    <section class="glass-panel rounded-2xl p-3 mb-3 flex flex-col gap-3 relative overflow-hidden">
-        <!-- Signal Trigger Button -->
-        <button id="getSignalBtn" onclick="generateSignal()" class="relative group w-full py-3.5 px-4 rounded-xl font-orbitron font-extrabold text-sm tracking-wider uppercase bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 text-white shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 active:scale-[0.98] transition-all overflow-hidden">
-            <span class="relative z-10 flex items-center justify-center gap-2">
-                <i class="fa-solid fa-bolt text-cyber-gold"></i>
-                <span>ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ</span>
-            </span>
-            <div class="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-        </button>
-
-        <!-- Signal Prediction Output Card (Hidden by default) -->
-        <div id="signalResultCard" class="hidden flex-col gap-2.5 p-3 rounded-xl bg-slate-950/90 border border-cyan-500/30 transition-all">
-            <div class="flex items-center justify-between border-b border-white/10 pb-2">
-                <div class="text-xs font-mono text-gray-300">
-                    ВРЕМЯ ЭКСПИРАЦИИ: <span id="expTimeText" class="text-cyber-accent font-bold">5 МИНУТ</span>
-                </div>
-                <div class="flex items-center gap-1 text-[10px] font-mono text-cyber-gold bg-cyber-gold/10 px-2 py-0.5 rounded border border-cyber-gold/30">
-                    <i class="fa-solid fa-bullseye"></i>
-                    <span>ТОЧНОСТЬ: <span id="confidenceScore">91%</span></span>
-                </div>
-            </div>
-
-            <!-- Signal Direction Display -->
-            <div id="signalDirectionBox" class="flex items-center justify-between p-3 rounded-xl bg-cyber-bull/10 border border-cyber-bull/40">
-                <div class="flex items-center gap-3">
-                    <div id="signalIcon" class="w-10 h-10 rounded-xl bg-cyber-bull/20 text-cyber-bull flex items-center justify-center text-xl font-black">
-                        <i class="fa-solid fa-arrow-trend-up"></i>
-                    </div>
-                    <div>
-                        <div id="signalText" class="font-orbitron font-extrabold text-lg text-cyber-bull">ВВЕРХ (CALL)</div>
-                        <div class="text-[10px] font-mono text-gray-300">Точка входа: <span id="entryPriceVal" class="text-white font-bold">1.08542</span></div>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-[10px] font-mono text-gray-400">Таймер захода:</div>
-                    <div id="countdownTimer" class="font-mono font-bold text-base text-cyber-accent">04:59</div>
-                </div>
-            </div>
-
-            <!-- Market Sentiment Bar -->
-            <div class="space-y-1 pt-1">
-                <div class="flex justify-between text-[10px] font-mono text-gray-400">
-                    <span>Быки: <span id="bullPercent" class="text-cyber-bull font-bold">78%</span></span>
-                    <span>Медведи: <span id="bearPercent" class="text-cyber-bear font-bold">22%</span></span>
-                </div>
-                <div class="w-full h-2 rounded-full bg-slate-800 overflow-hidden flex">
-                    <div id="bullBar" class="h-full bg-cyber-bull transition-all duration-500" style="width: 78%;"></div>
-                    <div id="bearBar" class="h-full bg-cyber-bear transition-all duration-500" style="width: 22%;"></div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- FOOTER STATS & NEWS FILTER -->
-    <footer class="grid grid-cols-2 gap-2 text-xs">
-        <div class="glass-panel p-2.5 rounded-xl flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-                <i class="fa-solid fa-newspaper text-xs"></i>
-            </div>
-            <div>
-                <div class="text-[9px] font-mono text-gray-400 uppercase tracking-wider">Новостной фильтр</div>
-                <div class="text-cyber-bull font-bold text-[11px] flex items-center gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-bull"></span>
-                    Тихо (Нет новостей)
-                </div>
-            </div>
-        </div>
-
-        <div class="glass-panel p-2.5 rounded-xl flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
-                <i class="fa-solid fa-trophy text-xs"></i>
-            </div>
-            <div>
-                <div class="text-[9px] font-mono text-gray-400 uppercase tracking-wider">Winrate Системы</div>
-                <div class="text-cyber-accent font-bold text-[11px] font-mono">
-                    88.4% <span class="text-[9px] text-gray-400 font-normal">(42/47 W)</span>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- JS ENGINE LOGIC -->
-    <script>
-        // State variables
-        let currentAsset = 'EUR/USD (OTC)';
-        let currentTF = '5M';
-        let candles = [];
-        let canvas, ctx;
-        let activeIndicators = { rsi: true, macd: true, bollinger: true, sr: true, trend: true };
-        let timerInterval = null;
-
-        // Base Prices for generation
-        const basePrices = {
-            'EUR/USD (OTC)': 1.08500,
-            'GBP/USD (OTC)': 1.26400,
-            'USD/JPY (OTC)': 154.200,
-            'AUD/CAD (OTC)': 0.89100,
-            'EUR/USD': 1.08480,
-            'GBP/USD': 1.26350,
-            'USD/CHF': 0.88200,
-            'USD/CAD': 1.39800,
-            'BTC/USD': 67450.00,
-            'ETH/USD': 2640.00,
-            'SOL/USD': 175.50
-        };
-
-        window.onload = function() {
-            canvas = document.getElementById('candlestickCanvas');
-            ctx = canvas.getContext('2d');
-            
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-
-            // Generate initial candles
-            generateCandleData();
-
-            // Start Canvas Render loop
-            requestAnimationFrame(renderChart);
-
-            // Live Tick Generator Loop
-            setInterval(updateLivePrice, 800);
-        };
-
-        function resizeCanvas() {
-            if (!canvas) return;
-            const rect = canvas.parentElement.getBoundingClientRect();
-            canvas.width = rect.width * window.devicePixelRatio;
-            canvas.height = rect.height * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-        }
-
-        // Generate synthetic OHLC Data
-        function generateCandleData() {
-            candles = [];
-            let price = basePrices[currentAsset] || 1.08500;
-            const candleCount = 35;
-            const volatility = price * (currentAsset.includes('BTC') ? 0.002 : 0.0004);
-
-            for (let i = 0; i < candleCount; i++) {
-                let open = price;
-                let change = (Math.random() - 0.49) * volatility;
-                let close = open + change;
-                let high = Math.max(open, close) + Math.random() * (volatility * 0.5);
-                let low = Math.min(open, close) - Math.random() * (volatility * 0.5);
-                let volume = Math.floor(Math.random() * 800) + 400;
-
-                candles.push({ open, high, low, close, volume });
-                price = close;
-            }
-            updateHUDValues();
-        }
-
-        // Live tick simulation
-        function updateLivePrice() {
-            if (candles.length === 0) return;
-            
-            let lastCandle = candles[candles.length - 1];
-            let price = basePrices[currentAsset] || 1.08500;
-            let tickDelta = (Math.random() - 0.485) * (price * 0.00015);
-
-            lastCandle.close += tickDelta;
-            if (lastCandle.close > lastCandle.high) lastCandle.high = lastCandle.close;
-            if (lastCandle.close < lastCandle.low) lastCandle.low = lastCandle.close;
-            lastCandle.volume += Math.floor(Math.random() * 5);
-
-            // Update Header Display
-            const livePriceEl = document.getElementById('livePrice');
-            const decimals = currentAsset.includes('JPY') || currentAsset.includes('BTC') ? 2 : 5;
-            livePriceEl.innerText = lastCandle.close.toFixed(decimals);
-            
-            // Trigger visual pulse color
-            if (tickDelta >= 0) {
-                livePriceEl.className = "font-mono font-bold text-base text-cyber-bull transition-colors duration-200";
-            } else {
-                livePriceEl.className = "font-mono font-bold text-base text-cyber-bear transition-colors duration-200";
-            }
-
-            updateHUDValues();
-        }
-
-        function updateHUDValues() {
-            if (!candles.length) return;
-            const lastCandle = candles[candles.length - 1];
-            const decimals = currentAsset.includes('JPY') || currentAsset.includes('BTC') ? 2 : 5;
-
-            // Simple Moving Average
-            const sum = candles.slice(-20).reduce((acc, c) => acc + c.close, 0);
-            const ma = sum / Math.min(candles.length, 20);
-            document.getElementById('maValue').innerText = ma.toFixed(decimals);
-
-            // Pseudo RSI
-            const rsiVal = (50 + (Math.sin(Date.now() / 3000) * 20)).toFixed(1);
-            document.getElementById('rsiValue').innerText = rsiVal;
-            document.getElementById('volValue').innerText = lastCandle.volume.toLocaleString();
-        }
-
-        // Custom HTML5 Canvas Engine Render Logic
-        function renderChart() {
-            if (!canvas || !ctx) return;
-
-            const width = canvas.width / window.devicePixelRatio;
-            const height = canvas.height / window.devicePixelRatio;
-
-            // Clear Background
-            ctx.clearRect(0, 0, width, height);
-
-            // Grid Lines Background
-            ctx.strokeStyle = 'rgba(0, 229, 255, 0.05)';
-            ctx.lineWidth = 1;
-
-            const gridRows = 5;
-            const gridCols = 8;
-            for (let i = 1; i < gridRows; i++) {
-                let y = (height / gridRows) * i;
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-                ctx.stroke();
-            }
-            for (let i = 1; i < gridCols; i++) {
-                let x = (width / gridCols) * i;
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, height);
-                ctx.stroke();
-            }
-
-            if (candles.length === 0) {
-                requestAnimationFrame(renderChart);
-                return;
-            }
-
-            // Min/Max Price calculation
-            let minPrice = Infinity;
-            let maxPrice = -Infinity;
-            candles.forEach(c => {
-                if (c.low < minPrice) minPrice = c.low;
-                if (c.high > maxPrice) maxPrice = c.high;
-            });
-
-            const padding = (maxPrice - minPrice) * 0.1 || 0.001;
-            minPrice -= padding;
-            maxPrice += padding;
-
-            const candleWidth = width / candles.length;
-
-            // Helper to get Y coordinate from price
-            const getY = (price) => height - ((price - minPrice) / (maxPrice - minPrice)) * height;
-
-            // Render S/R Dotted Lines
-            if (activeIndicators.sr) {
-                ctx.setLineDash([4, 4]);
-                ctx.strokeStyle = 'rgba(255, 215, 0, 0.4)';
-                let topLevel = maxPrice - padding * 0.5;
-                let botLevel = minPrice + padding * 0.5;
-
-                ctx.beginPath();
-                ctx.moveTo(0, getY(topLevel));
-                ctx.lineTo(width, getY(topLevel));
-                ctx.stroke();
-
-                ctx.strokeStyle = 'rgba(0, 229, 255, 0.4)';
-                ctx.beginPath();
-                ctx.moveTo(0, getY(botLevel));
-                ctx.lineTo(width, getY(botLevel));
-                ctx.stroke();
-
-                ctx.setLineDash([]);
-            }
-
-            // Render Moving Average Overlay Curve
-            ctx.strokeStyle = '#00e5ff';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            let maPeriod = 10;
-            for (let i = 0; i < candles.length; i++) {
-                if (i < maPeriod) continue;
-                let slice = candles.slice(i - maPeriod, i);
-                let avg = slice.reduce((acc, c) => acc + c.close, 0) / maPeriod;
-                let x = i * candleWidth + candleWidth / 2;
-                let y = getY(avg);
-                if (i === maPeriod) ctx.moveTo(x, y);
-                else ctx.lineTo(x, y);
-            }
-            ctx.stroke();
-
-            // Render Candlesticks
-            candles.forEach((c, i) => {
-                const x = i * candleWidth + candleWidth / 2;
-                const isBull = c.close >= c.open;
-                const bodyColor = isBull ? '#00ff88' : '#ff2a5f';
-
-                // Wick Line
-                ctx.strokeStyle = bodyColor;
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(x, getY(c.high));
-                ctx.lineTo(x, getY(c.low));
-                ctx.stroke();
-
-                // Candle Body
-                const openY = getY(c.open);
-                const closeY = getY(c.close);
-                const bodyHeight = Math.max(Math.abs(closeY - openY), 2);
-                const bodyY = Math.min(openY, closeY);
-                const rectW = Math.max(candleWidth * 0.65, 3);
-
-                ctx.fillStyle = bodyColor;
-                ctx.shadowColor = bodyColor;
-                ctx.shadowBlur = i === candles.length - 1 ? 10 : 0; // Glow last live candle
-                ctx.fillRect(x - rectW / 2, bodyY, rectW, bodyHeight);
-                ctx.shadowBlur = 0;
-
-                // Volume Bar at bottom
-                if (activeIndicators.macd) {
-                    const volHeight = (c.volume / 1200) * (height * 0.2);
-                    ctx.fillStyle = isBull ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255, 42, 95, 0.2)';
-                    ctx.fillRect(x - rectW / 2, height - volHeight, rectW, volHeight);
-                }
-            });
-
-            requestAnimationFrame(renderChart);
-        }
-
-        // Asset Change Handler
-        function changeAsset(newAsset) {
-            currentAsset = newAsset;
-            document.getElementById('chartSymbol').innerText = newAsset;
-            
-            // Extract payout %
-            const payoutMatch = newAsset.match(/(\d+)%/);
-            if (payoutMatch) {
-                document.getElementById('payoutBadge').innerText = `Выплата: ${payoutMatch[1]}%`;
-            }
-
-            generateCandleData();
-        }
-
-        // Timeframe switch
-        function setTimeframe(tf) {
-            currentTF = tf;
-            document.querySelectorAll('.tf-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tf-${tf}`).classList.add('active');
-            generateCandleData();
-        }
-
-        // Indicator Toggle
-        function toggleIndicator(indKey) {
-            activeIndicators[indKey] = !activeIndicators[indKey];
-            const btn = document.getElementById(`ind-${indKey}`);
-            if (activeIndicators[indKey]) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        }
-
-        // Dynamic Signal Generator Logic
-        function generateSignal() {
-            const btn = document.getElementById('getSignalBtn');
-            const card = document.getElementById('signalResultCard');
-
-            // Button Loading State
-            btn.disabled = true;
-            btn.innerHTML = `
-                <span class="relative z-10 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-spinner animate-spin"></i>
-                    <span>НЕЙРОСЕТЕВОЙ АНАЛИЗ...</span>
-                </span>
-            `;
-
-            // Haptic vibration feedback if available in mobile browser
-            if (navigator.vibrate) navigator.vibrate(50);
-
-            setTimeout(() => {
-                btn.disabled = false;
-                btn.innerHTML = `
-                    <span class="relative z-10 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-bolt text-cyber-gold"></i>
-                        <span>ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ</span>
-                    </span>
-                `;
-
-                // Calculate random high-accuracy signal
-                const isCall = Math.random() > 0.45;
-                const confidence = Math.floor(Math.random() * 8) + 88; // 88% - 95%
-                const bullPerc = isCall ? confidence : 100 - confidence;
-                const bearPerc = 100 - bullPerc;
-
-                const lastPrice = candles.length ? candles[candles.length - 1].close : basePrices[currentAsset];
-                const decimals = currentAsset.includes('JPY') || currentAsset.includes('BTC') ? 2 : 5;
-
-                // Update UI elements
-                document.getElementById('confidenceScore').innerText = `${confidence}%`;
-                document.getElementById('entryPriceVal').innerText = lastPrice.toFixed(decimals);
-                document.getElementById('expTimeText').innerText = `${currentTF} (${currentTF === '1M' ? '1 МИН' : currentTF === '5M' ? '5 МИН' : '15 МИН'})`;
-
-                const dirBox = document.getElementById('signalDirectionBox');
-                const dirIcon = document.getElementById('signalIcon');
-                const dirText = document.getElementById('signalText');
-
-                if (isCall) {
-                    dirBox.className = "flex items-center justify-between p-3 rounded-xl bg-cyber-bull/10 border border-cyber-bull/40 glow-bull transition-all";
-                    dirIcon.className = "w-10 h-10 rounded-xl bg-cyber-bull/20 text-cyber-bull flex items-center justify-center text-xl font-black";
-                    dirIcon.innerHTML = `<i class="fa-solid fa-arrow-trend-up"></i>`;
-                    dirText.className = "font-orbitron font-extrabold text-lg text-cyber-bull";
-                    dirText.innerText = "ВВЕРХ (CALL)";
-                } else {
-                    dirBox.className = "flex items-center justify-between p-3 rounded-xl bg-cyber-bear/10 border border-cyber-bear/40 glow-bear transition-all";
-                    dirIcon.className = "w-10 h-10 rounded-xl bg-cyber-bear/20 text-cyber-bear flex items-center justify-center text-xl font-black";
-                    dirIcon.innerHTML = `<i class="fa-solid fa-arrow-trend-down"></i>`;
-                    dirText.className = "font-orbitron font-extrabold text-lg text-cyber-bear";
-                    dirText.innerText = "ВНИЗ (PUT)";
-                }
-
-                document.getElementById('bullPercent').innerText = `${bullPerc}%`;
-                document.getElementById('bearPercent').innerText = `${bearPerc}%`;
-                document.getElementById('bullBar').style.width = `${bullPerc}%`;
-                document.getElementById('bearBar').style.width = `${bearPerc}%`;
-
-                // Update Pattern Detector HUD
-                const patterns = ["Bullish Engulfing", "Double Bottom", "Level Breakout", "Pinbar Reversal", "Head & Shoulders"];
-                const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
-                document.getElementById('patternText').innerHTML = `<i class="fa-solid fa-check text-cyber-bull"></i> ${randomPattern}`;
-
-                card.classList.remove('hidden');
-                card.classList.add('flex');
-
-                // Start Signal Timer Countdown
-                startTimer(currentTF === '1M' ? 60 : currentTF === '5M' ? 300 : 900);
-
-            }, 1200);
-        }
-
-        function startTimer(seconds) {
-            if (timerInterval) clearInterval(timerInterval);
-            let timer = seconds;
-            
-            const timerEl = document.getElementById('countdownTimer');
-            
-            timerInterval = setInterval(() => {
-                const mins = Math.floor(timer / 60);
-                const secs = timer % 60;
-                timerEl.innerText = `${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
-
-                if (--timer < 0) {
-                    clearInterval(timerInterval);
-                    timerEl.innerText = "00:00 (ОЖИДАНИЕ)";
-                }
-            }, 1000);
-        }
-    </script>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-logo">IB</div>
+      <div class="brand-title">INTRADE BAR <span>PRO</span></div>
+    </div>
+    <select id="assetSelect" onchange="changeAsset()">
+      <optgroup label="Intrade Bar OTC (85%)">
+        <option value="EURUSD_OTC">EUR/USD OTC (85%)</option>
+        <option value="GBPUSD_OTC">GBP/USD OTC (85%)</option>
+        <option value="USDJPY_OTC">USD/JPY OTC (85%)</option>
+        <option value="AUDUSD_OTC">AUD/USD OTC (85%)</option>
+      </optgroup>
+      <optgroup label="Forex Live">
+        <option value="EURUSD">EUR/USD (82%)</option>
+        <option value="GBPUSD">GBP/USD (80%)</option>
+        <option value="USDJPY">USD/JPY (82%)</option>
+      </optgroup>
+      <optgroup label="Crypto">
+        <option value="BTCUSDT">BTC/USDT (85%)</option>
+        <option value="ETHUSDT">ETH/USDT (85%)</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <!-- Controls Panel -->
+  <div class="controls-panel">
+    <div class="panel-row">
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Таймфрейм:</span>
+      <div class="tf-selector">
+        <button class="tf-btn" onclick="setTF('1M', this)">1M</button>
+        <button class="tf-btn active" onclick="setTF('5M', this)">5M</button>
+        <button class="tf-btn" onclick="setTF('15M', this)">15M</button>
+      </div>
+    </div>
+    <div class="tools-scroll">
+      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> RSI (14)</div>
+      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> MACD</div>
+      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> Bollinger Bands</div>
+      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> S/R Уровни</div>
+      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> Тренд-Фильтр</div>
+    </div>
+  </div>
+
+  <!-- Candlestick Chart -->
+  <div class="chart-card">
+    <div class="chart-info">
+      <div>
+        <span class="pair-name" id="pairLabel">EUR/USD OTC</span>
+        <span class="payout-badge" id="payoutBadge">85%</span>
+      </div>
+      <div class="price-value" id="priceDisplay">1.08542</div>
+    </div>
+    <canvas id="candleCanvas"></canvas>
+  </div>
+
+  <!-- Market Grid -->
+  <div class="grid-2">
+    <div class="stat-card">
+      <div class="stat-title">Паттерн рынка</div>
+      <div class="stat-val" style="color: var(--neon-cyan);" id="patternText">Бычье поглощение</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">Волатильность</div>
+      <div class="stat-val" style="color: var(--neon-green);">Оптимальная (Безопасно)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">Новостной фильтр</div>
+      <div class="stat-val" style="color: var(--neon-green);">🛡️ Тихо (Нет новостей)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">Winrate Алгоритма</div>
+      <div class="stat-val" style="color: var(--neon-green);">88.4% (42/47 W)</div>
+    </div>
+  </div>
+
+  <!-- Signal Box -->
+  <div class="signal-box">
+    <div class="signal-title">Сигнал нейросети</div>
+    <div class="signal-main signal-wait" id="signalDisplay">ГОТОВ К АНАЛИЗУ</div>
+  </div>
+
+  <!-- Action Button -->
+  <button class="btn-action" onclick="getSignal()">ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ</button>
+
+  <script>
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
+    }
+
+    const canvas = document.getElementById('candleCanvas');
+    const ctx = canvas.getContext('2d');
+    let candles = [];
+    let currentTF = '5M';
+
+    function initCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    function generateCandles() {
+      candles = [];
+      let basePrice = 1.0850;
+      for (let i = 0; i < 24; i++) {
+        let open = basePrice + (Math.random() - 0.48) * 0.0020;
+        let close = open + (Math.random() - 0.48) * 0.0025;
+        let high = Math.max(open, close) + Math.random() * 0.0010;
+        let low = Math.min(open, close) - Math.random() * 0.0010;
+        candles.push({ open, high, low, close });
+        basePrice = close;
+      }
+      const last = candles[candles.length - 1];
+      document.getElementById('priceDisplay').innerText = last.close.toFixed(5);
+    }
+
+    function drawCandles() {
+      const w = canvas.getBoundingClientRect().width;
+      const h = canvas.getBoundingClientRect().height;
+      ctx.clearRect(0, 0, w, h);
+
+      if (candles.length === 0) return;
+
+      const highs = candles.map(c => c.high);
+      const lows = candles.map(c => c.low);
+      const maxP = Math.max(...highs);
+      const minP = Math.min(...lows);
+      const range = (maxP - minP) || 1;
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let y = 20; y < h; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      const candleW = w / candles.length;
+
+      candles.forEach((c, i) => {
+        const isGreen = c.close >= c.open;
+        const x = i * candleW + candleW / 2;
+        const openY = h - ((c.open - minP) / range) * (h - 30) - 15;
+        const closeY = h - ((c.close - minP) / range) * (h - 30) - 15;
+        const highY = h - ((c.high - minP) / range) * (h - 30) - 15;
+        const lowY = h - ((c.low - minP) / range) * (h - 30) - 15;
+
+        // Wick
+        ctx.strokeStyle = isGreen ? '#00ff66' : '#ff0055';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, highY);
+        ctx.lineTo(x, lowY);
+        ctx.stroke();
+
+        // Body
+        ctx.fillStyle = isGreen ? '#00ff66' : '#ff0055';
+        const bodyTop = Math.min(openY, closeY);
+        const bodyH = Math.max(Math.abs(openY - closeY), 3);
+        ctx.fillRect(x - candleW * 0.3, bodyTop, candleW * 0.6, bodyH);
+      });
+    }
+
+    function changeAsset() {
+      const select = document.getElementById('assetSelect');
+      const text = select.options[select.selectedIndex].text;
+      document.getElementById('pairLabel').innerText = text.split(' ')[0];
+      generateCandles();
+      drawCandles();
+    }
+
+    function setTF(tf, btn) {
+      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTF = tf;
+      generateCandles();
+      drawCandles();
+    }
+
+    function toggleTool(chip) {
+      chip.classList.toggle('active');
+      const span = chip.querySelector('span');
+      if (chip.classList.contains('active')) {
+        span.innerText = '✓';
+      } else {
+        span.innerText = '+';
+      }
+    }
+
+    function getSignal() {
+      const display = document.getElementById('signalDisplay');
+      const btn = document.querySelector('.btn-action');
+
+      btn.innerText = 'АНАЛИЗ ПОТОКА ДАННЫХ...';
+      display.className = 'signal-main signal-wait';
+      display.innerText = '⏳ АНАЛИЗ...';
+
+      setTimeout(() => {
+        const isUp = Math.random() > 0.45;
+        const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
+        display.innerText = `${dir} • ${currentTF}`;
+        display.className = `signal-main ${isUp ? 'signal-buy' : 'signal-sell'}`;
+        btn.innerText = 'ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ';
+
+        const patterns = ['Бычье поглощение', 'Двойное дно', 'Пробой уровня S/R', 'Пин-бар на отскок'];
+        document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
+      }, 1000);
+    }
+
+    window.addEventListener('resize', () => { initCanvas(); drawCandles(); });
+    initCanvas();
+    generateCandles();
+    drawCandles();
+  </script>
 </body>
 </html>
-```
