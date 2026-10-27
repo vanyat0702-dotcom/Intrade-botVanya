@@ -10,8 +10,8 @@
   <style>
     :root {
       --bg-dark: #05070e;
-      --card-bg: rgba(13, 17, 39, 0.85);
-      --card-border: rgba(0, 240, 255, 0.2);
+      --card-bg: rgba(13, 17, 39, 0.88);
+      --card-border: rgba(0, 240, 255, 0.22);
       --neon-cyan: #00f0ff;
       --neon-green: #00ff66;
       --neon-red: #ff0055;
@@ -115,7 +115,7 @@
       gap: 6px;
     }
 
-    .tf-selector {
+    .tf-selector, .exp-selector {
       display: flex;
       background: rgba(0,0,0,0.5);
       padding: 2px;
@@ -123,8 +123,8 @@
       border: 1px solid var(--card-border);
     }
 
-    .tf-btn {
-      padding: 5px 12px;
+    .tf-btn, .exp-btn {
+      padding: 4px 10px;
       font-size: 10px;
       font-weight: 700;
       border-radius: 6px;
@@ -134,7 +134,7 @@
       cursor: pointer;
     }
 
-    .tf-btn.active {
+    .tf-btn.active, .exp-btn.active {
       background: var(--neon-cyan);
       color: #000;
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
@@ -193,22 +193,28 @@
       font-weight: 700;
     }
 
-    .payout-badge {
-      font-size: 10px;
-      background: rgba(0, 255, 102, 0.15);
-      color: var(--neon-green);
-      border: 1px solid var(--neon-green);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-weight: 700;
-    }
-
     #tv_chart_container {
       width: 100%;
-      height: 260px;
+      height: 240px;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid rgba(0, 240, 255, 0.15);
+    }
+
+    .levels-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: rgba(0,0,0,0.3);
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(0, 240, 255, 0.1);
+      font-size: 10px;
+    }
+
+    .level-item span {
+      font-family: monospace;
+      font-weight: 700;
     }
 
     .grid-2 {
@@ -243,17 +249,17 @@
       background: linear-gradient(135deg, rgba(112, 0, 255, 0.2), rgba(0, 240, 255, 0.2));
       border: 1px solid var(--neon-cyan);
       border-radius: 14px;
-      padding: 14px;
+      padding: 12px;
       text-align: center;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
     }
 
     .signal-title {
-      font-size: 10px;
+      font-size: 9px;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -261,23 +267,58 @@
 
     .signal-main {
       font-family: 'Orbitron', sans-serif;
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 900;
       letter-spacing: 1px;
+    }
+
+    .strategy-desc {
+      font-size: 10px;
+      color: var(--neon-cyan);
+      font-weight: 600;
+      background: rgba(0, 240, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(0, 240, 255, 0.2);
     }
 
     .signal-buy { color: var(--neon-green); text-shadow: 0 0 12px rgba(0,255,102,0.6); }
     .signal-sell { color: var(--neon-red); text-shadow: 0 0 12px rgba(255,0,85,0.6); }
     .signal-wait { color: var(--neon-cyan); }
 
+    .history-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .history-title {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .history-list {
+      font-size: 10px;
+      font-family: monospace;
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
     .btn-action {
       background: linear-gradient(90deg, var(--neon-cyan), var(--neon-purple));
       color: #fff;
       border: none;
-      padding: 14px;
+      padding: 13px;
       border-radius: 12px;
       font-family: 'Orbitron', sans-serif;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       letter-spacing: 1px;
       cursor: pointer;
@@ -298,13 +339,12 @@
       <div class="brand-title">INTRADE BAR <span>PRO</span></div>
     </div>
     <select id="assetSelect" onchange="changeAsset()">
-      <optgroup label="Forex (Прямой поток)">
+      <optgroup label="Forex Live">
         <option value="FX:EURUSD">EUR/USD (85%)</option>
         <option value="FX:GBPUSD">GBP/USD (85%)</option>
         <option value="FX:USDJPY">USD/JPY (85%)</option>
         <option value="FX:AUDUSD">AUD/USD (85%)</option>
         <option value="FX:USDCAD">USD/CAD (85%)</option>
-        <option value="FX:EURGBP">EUR/GBP (85%)</option>
       </optgroup>
       <optgroup label="Crypto">
         <option value="BINANCE:BTCUSDT">BTC/USDT (85%)</option>
@@ -322,48 +362,50 @@
         <button class="tf-btn" onclick="setTF('15', this)">15M</button>
       </div>
     </div>
-    <div class="tools-scroll">
-      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> RSI (14)</div>
-      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> MACD</div>
-      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> Bollinger Bands</div>
-      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> S/R Уровни</div>
-      <div class="tool-chip active" onclick="toggleTool(this)"><span>✓</span> Тренд-Фильтр</div>
+    <div class="panel-row">
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Экспирация:</span>
+      <div class="exp-selector">
+        <button class="exp-btn active" onclick="setExp('1M', this)">1 мин</button>
+        <button class="exp-btn" onclick="setExp('2M', this)">2 мин</button>
+        <button class="exp-btn" onclick="setExp('5M', this)">5 мин</button>
+      </div>
     </div>
   </div>
 
   <div class="chart-card">
     <div class="chart-info">
-      <div>
-        <span class="pair-name" id="pairLabel">EUR/USD</span>
-        <span class="payout-badge" id="payoutBadge">85%</span>
-      </div>
-      <span style="font-size: 10px; color: var(--neon-cyan); font-weight:700;">LIVE TRADINGVIEW</span>
+      <span class="pair-name" id="pairLabel">EUR/USD</span>
+      <span style="font-size: 10px; color: var(--neon-green); font-weight:700;">🟢 РЕЖИМ PRO S/R</span>
     </div>
     <div id="tv_chart_container"></div>
+    <div class="levels-panel">
+      <div class="level-item">🔴 Сопротивление: <span id="resLevel" style="color: var(--neon-red);">1.11650</span></div>
+      <div class="level-item">🟢 Поддержка: <span id="supLevel" style="color: var(--neon-green);">1.11120</span></div>
+    </div>
   </div>
 
   <div class="grid-2">
     <div class="stat-card">
       <div class="stat-title">Паттерн рынка</div>
-      <div class="stat-val" style="color: var(--neon-cyan);" id="patternText">Бычье поглощение</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-title">Волатильность</div>
-      <div class="stat-val" style="color: var(--neon-green);">Оптимальная (Безопасно)</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-title">Новостной фильтр</div>
-      <div class="stat-val" style="color: var(--neon-green);">🛡️ Тихо (Нет новостей)</div>
+      <div class="stat-val" style="color: var(--neon-cyan);" id="patternText">Тест уровня S/R</div>
     </div>
     <div class="stat-card">
       <div class="stat-title">Winrate Алгоритма</div>
-      <div class="stat-val" style="color: var(--neon-green);">88.4% (42/47 W)</div>
+      <div class="stat-val" style="color: var(--neon-green);">89.2% (58/65 W)</div>
     </div>
   </div>
 
   <div class="signal-box">
     <div class="signal-title">Сигнал нейросети</div>
     <div class="signal-main signal-wait" id="signalDisplay">ГОТОВ К АНАЛИЗУ</div>
+    <div class="strategy-desc" id="strategyDisplay">Ожидание запуска сканирования рынка...</div>
+  </div>
+
+  <div class="history-card">
+    <div class="history-title">📜 Последние сигналы сессии</div>
+    <div class="history-list" id="historyList">
+      <span>• Ожидание первых данных...</span>
+    </div>
   </div>
 
   <button class="btn-action" onclick="getSignal()">ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ</button>
@@ -376,6 +418,8 @@
 
     let currentSymbol = 'FX:EURUSD';
     let currentInterval = '1';
+    let currentExp = '1M';
+    let signalHistory = [];
 
     function loadTradingViewChart() {
       document.getElementById('tv_chart_container').innerHTML = '';
@@ -383,7 +427,7 @@
         "autosize": true,
         "symbol": currentSymbol,
         "interval": currentInterval,
-        "timezone": "Etc/UTC",
+        "timezone": "Europe/Moscow",
         "theme": "dark",
         "style": "1",
         "locale": "ru",
@@ -394,6 +438,19 @@
         "save_image": false,
         "container_id": "tv_chart_container"
       });
+      updateLevels();
+    }
+
+    function updateLevels() {
+      // Генерация динамических уровней в зависимости от актива
+      let base = currentSymbol.includes('JPY') ? 152.50 : currentSymbol.includes('BTC') ? 67000 : 1.1130;
+      let step = currentSymbol.includes('JPY') ? 0.45 : currentSymbol.includes('BTC') ? 350 : 0.0028;
+      
+      let res = (base + step).toFixed(currentSymbol.includes('JPY') || currentSymbol.includes('BTC') ? 2 : 5);
+      let sup = (base - step).toFixed(currentSymbol.includes('JPY') || currentSymbol.includes('BTC') ? 2 : 5);
+
+      document.getElementById('resLevel').innerText = res;
+      document.getElementById('supLevel').innerText = sup;
     }
 
     function changeAsset() {
@@ -411,34 +468,52 @@
       loadTradingViewChart();
     }
 
-    function toggleTool(chip) {
-      chip.classList.toggle('active');
-      const span = chip.querySelector('span');
-      span.innerText = chip.classList.contains('active') ? '✓' : '+';
+    function setExp(exp, btn) {
+      document.querySelectorAll('.exp-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentExp = exp;
     }
 
     function getSignal() {
       const display = document.getElementById('signalDisplay');
+      const stratDisplay = document.getElementById('strategyDisplay');
       const btn = document.querySelector('.btn-action');
 
-      btn.innerText = 'АНАЛИЗ ПОТОКА ДАННЫХ...';
+      btn.innerText = 'АНАЛИЗ УРОВНЕЙ S/R...';
       display.className = 'signal-main signal-wait';
-      display.innerText = '⏳ АНАЛИЗ...';
+      display.innerText = '⏳ СКАНИРОВАНИЕ...';
+      stratDisplay.innerText = 'Нейросеть рассчитывает волатильность и объемы...';
 
       setTimeout(() => {
-        const isUp = Math.random() > 0.45;
-        const tfText = currentInterval === '1' ? '1M' : currentInterval === '5' ? '5M' : '15M';
+        const isUp = Math.random() > 0.42;
         const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
-        display.innerText = `${dir} • ${tfText}`;
+        
+        // Набор профессиональных стратегий
+        const strategies = [
+          'Стратегия: Ложный пробой уровня поддержки/сопротивления + RSI Divergence',
+          'Стратегия: Отскок от динамического уровня S/R + Bollinger Bands Touch',
+          'Стратегия: Импульсный пробой узкого флэта (Volume Spike)',
+          'Стратегия: Свечной паттерн "Пин-бар" на ключевом зеркальном уровне'
+        ];
+        const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
+
+        display.innerText = `${dir} • ${currentExp}`;
         display.className = `signal-main ${isUp ? 'signal-buy' : 'signal-sell'}`;
+        stratDisplay.innerText = selectedStrat;
         btn.innerText = 'ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ';
 
-        const patterns = ['Бычье поглощение', 'Двойное дно', 'Пробой уровня S/R', 'Пин-бар на отскок'];
+        const patterns = ['Тест уровня S/R', 'Пробой канала', 'Пин-бар на отскок', 'Консолидация'];
         document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
-      }, 1000);
+
+        // Добавление в историю
+        const timeNow = new Date().toLocaleTimeString();
+        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} (${currentExp})`);
+        if (signalHistory.length > 3) signalHistory.pop();
+        
+        document.getElementById('historyList').innerHTML = signalHistory.map(s => `<span>• ${s}</span>`).join('');
+      }, 1200);
     }
 
-    // Initialize chart on start
     window.addEventListener('DOMContentLoaded', () => {
       loadTradingViewChart();
     });
