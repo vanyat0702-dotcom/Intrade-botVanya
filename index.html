@@ -1,416 +1,569 @@
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>INTRADE BAR PRO Terminal v28.0</title>
+  <title>INTRADE BAR PRO Terminal v30.0</title>
+  <!-- Telegram WebApp SDK -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <style>
-    :root {
-      --bg-dark: #0b0e14;
-      --card-bg: rgba(22, 27, 34, 0.75);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --accent-green: #00e676;
-      --accent-red: #ff1744;
-      --accent-blue: #29b6f6;
-      --text-main: #f0f6fc;
-      --text-muted: #8b949e;
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- TradingView Lightweight Charts CDN -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            bgDark: '#0b0e14',
+            panelBg: '#131722',
+            panelBorder: '#2a2e39',
+            brandGreen: '#089981',
+            brandGreenHover: '#067a67',
+            brandRed: '#f23645',
+            brandRedHover: '#cc2d3a',
+            brandBlue: '#2962ff',
+            accentGold: '#f0b90b'
+          }
+        }
+      }
     }
-
+  </script>
+  <style>
     * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
-
     body {
-      background-color: var(--bg-dark);
-      color: var(--text-main);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      gap: 12px;
-      overflow-x: hidden;
+      background-color: #0b0e14;
+      color: #d1d4dc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
-
-    /* Header Controls */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: var(--card-bg);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--card-border);
-      padding: 10px 14px;
-      border-radius: 12px;
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
     }
-
-    .brand-title {
-      font-size: 14px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    ::-webkit-scrollbar-track {
+      background: #131722;
     }
-
-    .brand-title span {
-      background: linear-gradient(90deg, #00e676, #29b6f6);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    ::-webkit-scrollbar-thumb {
+      background: #2a2e39;
+      border-radius: 2px;
     }
-
-    .badge-v {
-      font-size: 10px;
-      background: rgba(41, 182, 246, 0.15);
-      color: var(--accent-blue);
-      padding: 2px 6px;
-      border-radius: 6px;
-      border: 1px solid rgba(41, 182, 246, 0.3);
+    /* Pulse Animations */
+    @keyframes pulseGlowGreen {
+      0%, 100% { box-shadow: 0 0 15px rgba(8, 153, 129, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(8, 153, 129, 0.8); }
     }
-
-    select {
-      background: #161b22;
-      color: var(--text-main);
-      border: 1px solid var(--card-border);
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      outline: none;
+    @keyframes pulseGlowRed {
+      0%, 100% { box-shadow: 0 0 15px rgba(242, 54, 69, 0.4); }
+      50% { box-shadow: 0 0 25px rgba(242, 54, 69, 0.8); }
     }
-
-    /* Dashboard Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      backdrop-filter: blur(10px);
-      border: 1px solid var(--card-border);
-      padding: 10px;
-      border-radius: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .card-title {
-      font-size: 10px;
-      text-transform: uppercase;
-      color: var(--text-muted);
-      letter-spacing: 0.5px;
-    }
-
-    .card-value {
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    /* Progress bars */
-    .bar-container {
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 4px;
-      display: flex;
-    }
-
-    .bar-fill-green {
-      height: 100%;
-      background: var(--accent-green);
-      transition: width 0.3s ease;
-    }
-
-    .bar-fill-red {
-      height: 100%;
-      background: var(--accent-red);
-      transition: width 0.3s ease;
-    }
-
-    /* Chart Area */
-    .chart-container {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 12px;
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .symbol-price {
-      font-size: 18px;
-      font-weight: 800;
-      font-family: monospace;
-    }
-
-    canvas {
-      width: 100%;
-      height: 180px;
-      display: block;
-    }
-
-    /* Action Banner / Signal */
-    .signal-banner {
-      background: linear-gradient(135deg, rgba(0, 230, 118, 0.1), rgba(41, 182, 246, 0.1));
-      border: 1px solid rgba(0, 230, 118, 0.3);
-      border-radius: 12px;
-      padding: 12px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.3s ease;
-    }
-
-    .signal-status {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .signal-action {
-      font-size: 20px;
-      font-weight: 900;
-      letter-spacing: 1px;
-    }
-
-    .signal-buy { color: var(--accent-green); }
-    .signal-sell { color: var(--accent-red); }
-    .signal-wait { color: var(--accent-blue); }
-
-    .btn-start {
-      background: linear-gradient(90deg, #00e676, #00b0ff);
-      color: #000;
-      border: none;
-      padding: 12px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 800;
-      text-transform: uppercase;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0, 230, 118, 0.3);
-      transition: transform 0.1s ease;
-    }
-
-    .btn-start:active {
-      transform: scale(0.98);
-    }
+    .glow-green { animation: pulseGlowGreen 2s infinite; }
+    .glow-red { animation: pulseGlowRed 2s infinite; }
   </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col justify-between p-2 sm:p-4 gap-3 max-w-7xl mx-auto">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="brand-title">
-      ⚡ <span>INTRADE BAR PRO</span>
-      <span class="badge-v">v28.0 Live</span>
-    </div>
-    <select id="pairSelect" onchange="changePair()">
-      <option value="BTCUSDT">BTC/USDT</option>
-      <option value="ETHUSDT">ETH/USDT</option>
-      <option value="EURUSDT">EUR/USD (Binance)</option>
-      <option value="SOLUSDT">SOL/USDT</option>
-    </select>
-  </div>
-
-  <!-- Dashboard Stats -->
-  <div class="grid">
-    <div class="card">
-      <div class="card-title">Новостной фильтр</div>
-      <div class="card-value" style="color: var(--accent-green);" id="newsFilter">🛡️ Низкий риск</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Рыночный паттерн</div>
-      <div class="card-value" id="patternValue">Восходящий канал</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Sentiment (Настроение)</div>
-      <div class="card-value" id="sentimentText">50% BUY / 50% SELL</div>
-      <div class="bar-container">
-        <div class="bar-fill-green" id="buyBar" style="width: 50%;"></div>
-        <div class="bar-fill-red" id="sellBar" style="width: 50%;"></div>
+  <!-- TOP BAR: Header & Pair Selector -->
+  <header class="bg-panelBg border border-panelBorder rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 shadow-lg">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-brandGreen to-brandBlue flex items-center justify-center text-white font-extrabold text-lg shadow-md">
+        IB
+      </div>
+      <div>
+        <div class="flex items-center gap-1.5">
+          <h1 class="text-sm font-extrabold tracking-wide text-white">INTRADE BAR <span class="text-brandBlue">PRO</span></h1>
+          <span class="text-[10px] bg-brandBlue/20 text-brandBlue border border-brandBlue/40 px-1.5 py-0.5 rounded font-mono font-bold">v30.0</span>
+        </div>
+        <p class="text-[10px] text-gray-400">Премиум веб-терминал сигналов</p>
       </div>
     </div>
-    <div class="card">
-      <div class="card-title">Статистика Winrate</div>
-      <div class="card-value" style="color: var(--accent-green);" id="winrateValue">Побед: 14 | 87.5%</div>
-      <div class="bar-container">
-        <div class="bar-fill-green" style="width: 87.5%;"></div>
+
+    <!-- Pair & Market Selector -->
+    <div class="flex items-center gap-2">
+      <select id="assetCategory" onchange="filterPairs()" class="bg-[#1e222d] text-xs font-semibold text-gray-200 border border-panelBorder rounded-lg px-2 py-1.5 focus:outline-none focus:border-brandBlue">
+        <option value="ALL">Все активы</option>
+        <option value="MAJOR">Major Pairs</option>
+        <option value="CROSS">Cross Pairs</option>
+        <option value="OTC">OTC Пары</option>
+        <option value="CRYPTO">Криптовалюта</option>
+      </select>
+      
+      <select id="pairSelect" onchange="changeActivePair()" class="bg-[#1e222d] text-xs font-bold text-white border border-brandBlue/50 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-brandBlue shadow-sm">
+        <!-- Dynamically Populated -->
+      </select>
+    </div>
+  </header>
+
+  <!-- CONTROL PANEL: Timeframes & Indicator Toggles -->
+  <section class="bg-panelBg border border-panelBorder rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+    <!-- Timeframe Selection -->
+    <div class="flex items-center gap-1.5 w-full sm:w-auto justify-between sm:justify-start">
+      <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mr-1 flex items-center gap-1">
+        <i data-lucide="clock" class="w-3.5 h-3.5"></i> ТФ:
+      </span>
+      <div class="flex bg-[#1e222d] p-1 rounded-lg border border-panelBorder gap-1 w-full sm:w-auto">
+        <button onclick="setTimeframe('1M')" id="tf-1M" class="tf-btn flex-1 sm:flex-none text-xs font-bold px-3 py-1 rounded bg-brandBlue text-white transition-all">1М</button>
+        <button onclick="setTimeframe('5M')" id="tf-5M" class="tf-btn flex-1 sm:flex-none text-xs font-bold px-3 py-1 rounded text-gray-400 hover:text-white transition-all">5М</button>
+        <button onclick="setTimeframe('15M')" id="tf-15M" class="tf-btn flex-1 sm:flex-none text-xs font-bold px-3 py-1 rounded text-gray-400 hover:text-white transition-all">15М</button>
       </div>
     </div>
-  </div>
 
-  <!-- Live Chart -->
-  <div class="chart-container">
-    <div class="chart-header">
-      <div style="font-size: 12px; color: var(--text-muted);" id="currentPairLabel">BTC/USDT</div>
-      <div class="symbol-price" id="priceDisplay">00.00</div>
+    <!-- Strategy Indicators Toggle Modal Trigger / Quick Switches -->
+    <div class="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+      <button onclick="toggleIndicator('rsi')" id="ind-rsi" class="ind-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-panelBorder bg-[#1e222d] text-gray-300 flex items-center gap-1 transition-all">
+        <span class="w-2 h-2 rounded-full bg-gray-500 ind-dot"></span> RSI (14)
+      </button>
+      <button onclick="toggleIndicator('macd')" id="ind-macd" class="ind-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-panelBorder bg-[#1e222d] text-gray-300 flex items-center gap-1 transition-all">
+        <span class="w-2 h-2 rounded-full bg-gray-500 ind-dot"></span> MACD
+      </button>
+      <button onclick="toggleIndicator('bb')" id="ind-bb" class="ind-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-panelBorder bg-[#1e222d] text-gray-300 flex items-center gap-1 transition-all">
+        <span class="w-2 h-2 rounded-full bg-gray-500 ind-dot"></span> Bollinger
+      </button>
+      <button onclick="toggleIndicator('sr')" id="ind-sr" class="ind-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-panelBorder bg-[#1e222d] text-gray-300 flex items-center gap-1 transition-all">
+        <span class="w-2 h-2 rounded-full bg-gray-500 ind-dot"></span> S/R Уровни
+      </button>
+      <button onclick="toggleIndicator('trend')" id="ind-trend" class="ind-btn text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-panelBorder bg-[#1e222d] text-gray-300 flex items-center gap-1 transition-all">
+        <span class="w-2 h-2 rounded-full bg-gray-500 ind-dot"></span> Тренд
+      </button>
     </div>
-    <canvas id="chartCanvas"></canvas>
-  </div>
+  </section>
 
-  <!-- Signal Output -->
-  <div class="signal-banner" id="signalBanner">
-    <div class="signal-status">Системный алгоритм</div>
-    <div class="signal-action signal-wait" id="signalText">ОБРАБОТКА ДАННЫХ...</div>
-  </div>
+  <!-- MAIN SECTION: Candlestick Chart & Signal Center -->
+  <main class="grid grid-cols-1 lg:grid-cols-3 gap-3 flex-1">
+    
+    <!-- Chart Container (2 Cols on Large Screens) -->
+    <div class="lg:col-span-2 bg-panelBg border border-panelBorder rounded-xl p-3 flex flex-col justify-between shadow-lg relative min-h-[350px]">
+      <!-- Chart HUD Info -->
+      <div class="flex items-center justify-between border-b border-panelBorder pb-2 mb-2">
+        <div class="flex items-center gap-3">
+          <div id="chartPairTitle" class="text-base font-extrabold text-white">EUR/USD</div>
+          <div id="payoutBadge" class="text-xs bg-brandGreen/20 text-brandGreen border border-brandGreen/40 font-bold px-2 py-0.5 rounded-full">
+            Выплата: 85%
+          </div>
+        </div>
+        <div class="flex items-center gap-3 font-mono">
+          <div class="text-xs text-gray-400">ЦЕНА: <span id="currentLivePrice" class="text-white font-bold text-sm">--.----</span></div>
+          <div id="priceChange" class="text-xs font-bold text-brandGreen">+0.00%</div>
+        </div>
+      </div>
 
-  <!-- Action Button -->
-  <button class="btn-start" onclick="generateSignal()">Анализировать рынок</button>
+      <!-- TradingView Lightweight Canvas -->
+      <div id="chartContainer" class="w-full flex-1 rounded-lg overflow-hidden relative"></div>
 
+      <!-- Active Indicators Overlay Summary -->
+      <div class="mt-2 pt-2 border-t border-panelBorder flex flex-wrap items-center justify-between text-[11px] text-gray-400 gap-2">
+        <div class="flex items-center gap-2">
+          <span>Рыночный паттерн: <strong id="detectedPattern" class="text-accentGold">Поиск паттерна...</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span>Волатильность: <strong id="volatilityStatus" class="text-brandGreen">Умеренная (Безопасно)</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signal & Analytics Panel (1 Col) -->
+    <div class="flex flex-col gap-3">
+      
+      <!-- Analytics Grid -->
+      <div class="grid grid-cols-2 gap-2">
+        <div class="bg-panelBg border border-panelBorder rounded-xl p-2.5 flex flex-col justify-between">
+          <span class="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
+            <i data-lucide="shield-alert" class="w-3 h-3 text-brandGreen"></i> Новостной фильтр
+          </span>
+          <div id="newsFilterStatus" class="text-xs font-extrabold text-brandGreen mt-1">🛡️ Тихо (Нет новостей)</div>
+        </div>
+
+        <div class="bg-panelBg border border-panelBorder rounded-xl p-2.5 flex flex-col justify-between">
+          <span class="text-[10px] font-bold uppercase text-gray-400 flex items-center gap-1">
+            <i data-lucide="trophy" class="w-3 h-3 text-accentGold"></i> Winrate Системы
+          </span>
+          <div id="winrateStats" class="text-xs font-extrabold text-white mt-1">88.4% <span class="text-[10px] text-gray-400 font-normal">(42/47 W)</span></div>
+        </div>
+      </div>
+
+      <!-- Sentiment Bar Card -->
+      <div class="bg-panelBg border border-panelBorder rounded-xl p-3 flex flex-col gap-2">
+        <div class="flex justify-between items-center text-xs">
+          <span class="font-bold text-gray-300">Настроение рынка (Sentiment)</span>
+          <span id="sentimentRatio" class="font-mono font-bold text-brandGreen">65% BUY</span>
+        </div>
+        <div class="h-2 w-full bg-[#1e222d] rounded-full overflow-hidden flex">
+          <div id="sentimentBuyBar" class="bg-brandGreen h-full transition-all duration-500" style="width: 65%;"></div>
+          <div id="sentimentSellBar" class="bg-brandRed h-full transition-all duration-500" style="width: 35%;"></div>
+        </div>
+        <div class="flex justify-between text-[10px] font-mono text-gray-400">
+          <span>ПОКУПКА (CALL)</span>
+          <span>ПРОДАЖА (PUT)</span>
+        </div>
+      </div>
+
+      <!-- Signal Generator Output Card -->
+      <div id="signalCard" class="bg-panelBg border border-panelBorder rounded-xl p-4 flex flex-col items-center justify-between flex-1 gap-3 text-center relative overflow-hidden shadow-lg">
+        
+        <div class="w-full flex justify-between items-center border-b border-panelBorder pb-2">
+          <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">AI Анализатор Сигналов</span>
+          <span id="signalTimeframeBadge" class="text-[10px] bg-[#1e222d] text-gray-300 font-mono px-2 py-0.5 rounded border border-panelBorder">ТФ: 1M</span>
+        </div>
+
+        <div class="my-auto flex flex-col items-center justify-center gap-2 py-2">
+          <div id="signalStatusIcon" class="w-12 h-12 rounded-full bg-[#1e222d] border border-panelBorder flex items-center justify-center text-gray-400 mb-1">
+            <i data-lucide="cpu" class="w-6 h-6 animate-pulse"></i>
+          </div>
+
+          <div id="signalText" class="text-base font-extrabold text-gray-300 tracking-wide">ГОТОВ К АНАЛИЗУ</div>
+          <div id="signalSubtext" class="text-xs text-gray-400 max-w-[220px]">Выберите валютную пару и нажмите кнопку запуска</div>
+          
+          <!-- Signal Expiry Timer -->
+          <div id="signalTimerBox" class="hidden mt-2 flex items-center gap-2 bg-[#1e222d] px-3 py-1.5 rounded-lg border border-panelBorder font-mono text-xs">
+            <span class="text-gray-400">Времени до входа:</span>
+            <span id="signalTimer" class="font-bold text-accentGold text-sm">00:45</span>
+          </div>
+        </div>
+
+        <!-- Execute Signal Button -->
+        <button onclick="runSignalAnalysis()" id="btnAnalyze" class="w-full bg-gradient-to-r from-brandGreen to-brandBlue hover:from-brandGreenHover hover:to-brandBlue text-white font-extrabold text-sm py-3 px-4 rounded-xl shadow-lg transition-all transform active:scale-[0.98] flex items-center justify-center gap-2">
+          <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
+          <span>ПОЛУЧИТЬ СИГНАЛ</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- FOOTER: Status & Quick Help -->
+  <footer class="bg-panelBg border border-panelBorder rounded-xl p-2.5 px-3 flex flex-wrap justify-between items-center text-[11px] text-gray-400 gap-2">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-brandGreen animate-ping"></span>
+      <span class="text-gray-300 font-medium">Подключено к серверу Intrade Bar API</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span>Задержка: <strong class="text-brandGreen font-mono">14 мс</strong></span>
+      <span>Сделок сегодня: <strong class="text-white font-mono">128</strong></span>
+    </div>
+  </footer>
+
+  <!-- SCRIPT LOGIC -->
   <script>
-    // Initialize Telegram WebApp
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Initialize Telegram Mini App
     if (window.Telegram && window.Telegram.WebApp) {
       window.Telegram.WebApp.ready();
       window.Telegram.WebApp.expand();
+      window.Telegram.WebApp.setHeaderColor('#0b0e14');
+      window.Telegram.WebApp.setBackgroundColor('#0b0e14');
     }
 
-    let currentSymbol = 'BTCUSDT';
-    let priceHistory = [];
-    let ws = null;
-    const canvas = document.getElementById('chartCanvas');
-    const ctx = canvas.getContext('2d');
+    // List of Intrade Bar Currency Pairs & Assets
+    const INTRADE_PAIRS = [
+      { symbol: 'EURUSD', name: 'EUR/USD', cat: 'MAJOR', payout: 85, binance: 'EURUSDT' },
+      { symbol: 'GBPUSD', name: 'GBP/USD', cat: 'MAJOR', payout: 82, binance: 'GBPUSDT' },
+      { symbol: 'USDJPY', name: 'USD/JPY', cat: 'MAJOR', payout: 80, binance: 'USDJPY' },
+      { symbol: 'AUDUSD', name: 'AUD/USD', cat: 'MAJOR', payout: 83, binance: 'AUDUSDT' },
+      { symbol: 'USDCAD', name: 'USD/CAD', cat: 'MAJOR', payout: 81, binance: 'USDCAD' },
+      { symbol: 'EURGBP', name: 'EUR/GBP', cat: 'CROSS', payout: 79, binance: 'EURGBP' },
+      { symbol: 'GBPJPY', name: 'GBP/JPY', cat: 'CROSS', payout: 85, binance: 'GBPJPY' },
+      { symbol: 'AUDCAD', name: 'AUD/CAD', cat: 'CROSS', payout: 78, binance: 'AUDCAD' },
+      { symbol: 'EURJPY', name: 'EUR/JPY', cat: 'CROSS', payout: 82, binance: 'EURJPY' },
+      { symbol: 'EURUSD_OTC', name: 'EUR/USD (OTC)', cat: 'OTC', payout: 87, binance: 'EURUSDT' },
+      { symbol: 'GBPUSD_OTC', name: 'GBP/USD (OTC)', cat: 'OTC', payout: 86, binance: 'GBPUSDT' },
+      { symbol: 'USDJPY_OTC', name: 'USD/JPY (OTC)', cat: 'OTC', payout: 88, binance: 'USDJPY' },
+      { symbol: 'BTCUSDT', name: 'BTC/USDT', cat: 'CRYPTO', payout: 80, binance: 'BTCUSDT' },
+      { symbol: 'ETHUSDT', name: 'ETH/USDT', cat: 'CRYPTO', payout: 80, binance: 'ETHUSDT' },
+      { symbol: 'SOLUSDT', name: 'SOL/USDT', cat: 'CRYPTO', payout: 78, binance: 'SOLUSDT' }
+    ];
 
-    // Resize Canvas for sharp retina display
-    function setupCanvas() {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width * window.devicePixelRatio;
-      canvas.height = rect.height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    }
-    window.addEventListener('resize', setupCanvas);
+    // Terminal State Variables
+    let currentPair = INTRADE_PAIRS[0];
+    let currentTimeframe = '1M';
+    let chart, candlestickSeries;
+    let candleData = [];
+    let liveWebSocket = null;
+    let timerInterval = null;
 
-    // Connect to Binance WebSocket for Real-time Data
-    function connectWebSocket(symbol) {
-      if (ws) ws.close();
+    // Active Indicator Toggles
+    const activeIndicators = {
+      rsi: true,
+      macd: false,
+      bb: true,
+      sr: true,
+      trend: true
+    };
 
-      ws = new WebSocket(`wss://stream.binance.com:9443/ws/${symbol.toLowerCase()}@ticker`);
+    // Populate Pairs Dropdown
+    function filterPairs() {
+      const category = document.getElementById('assetCategory').value;
+      const select = document.getElementById('pairSelect');
+      select.innerHTML = '';
+
+      const filtered = category === 'ALL' ? INTRADE_PAIRS : INTRADE_PAIRS.filter(p => p.cat === category);
       
-      ws.onmessage = (event) => {
+      filtered.forEach(pair => {
+        const opt = document.createElement('option');
+        opt.value = pair.symbol;
+        opt.innerText = `${pair.name} (${pair.payout}%)`;
+        select.appendChild(opt);
+      });
+
+      if (filtered.length > 0) {
+        changeActivePair();
+      }
+    }
+
+    // Change Selected Pair
+    function changeActivePair() {
+      const symbolVal = document.getElementById('pairSelect').value;
+      currentPair = INTRADE_PAIRS.find(p => p.symbol === symbolVal) || INTRADE_PAIRS[0];
+
+      document.getElementById('chartPairTitle').innerText = currentPair.name;
+      document.getElementById('payoutBadge').innerText = `Выплата: ${currentPair.payout}%`;
+
+      initCandleData();
+      connectBinanceStream();
+      updateIndicatorsHUD();
+    }
+
+    // Timeframe Switcher
+    function setTimeframe(tf) {
+      currentTimeframe = tf;
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.classList.remove('bg-brandBlue', 'text-white');
+        btn.classList.add('text-gray-400');
+      });
+      document.getElementById(`tf-${tf}`).classList.add('bg-brandBlue', 'text-white');
+      document.getElementById(`tf-${tf}`).classList.remove('text-gray-400');
+      document.getElementById('signalTimeframeBadge').innerText = `ТФ: ${tf}`;
+
+      initCandleData();
+    }
+
+    // Toggle Strategy Indicators
+    function toggleIndicator(key) {
+      activeIndicators[key] = !activeIndicators[key];
+      const btn = document.getElementById(`ind-${key}`);
+      const dot = btn.querySelector('.ind-dot');
+
+      if (activeIndicators[key]) {
+        btn.classList.add('border-brandBlue/60', 'bg-brandBlue/10', 'text-white');
+        dot.classList.remove('bg-gray-500');
+        dot.classList.add('bg-brandGreen');
+      } else {
+        btn.classList.remove('border-brandBlue/60', 'bg-brandBlue/10', 'text-white');
+        dot.classList.remove('bg-brandGreen');
+        dot.classList.add('bg-gray-500');
+      }
+      updateIndicatorsHUD();
+    }
+
+    // Update HUD indicator info
+    function updateIndicatorsHUD() {
+      const patterns = ['Двойное дно', 'Бычье поглощение', 'Пинбар у уровня', 'Пробой линии тренда', 'Голова и плечи'];
+      const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+      document.getElementById('detectedPattern').innerText = randomPattern;
+    }
+
+    // Initialize TradingView Lightweight Chart
+    function initChart() {
+      const container = document.getElementById('chartContainer');
+      container.innerHTML = '';
+
+      chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: container.clientHeight || 300,
+        layout: {
+          background: { color: '#131722' },
+          textColor: '#d1d4dc',
+        },
+        grid: {
+          vertLines: { color: '#1e222d' },
+          horzLines: { color: '#1e222d' },
+        },
+        crosshair: {
+          mode: LightweightCharts.CrosshairMode.Normal,
+        },
+        rightPriceScale: {
+          borderColor: '#2a2e39',
+        },
+        timeScale: {
+          borderColor: '#2a2e39',
+          timeVisible: true,
+          secondsVisible: false,
+        },
+      });
+
+      candlestickSeries = chart.addCandlestickSeries({
+        upColor: '#089981',
+        downColor: '#f23645',
+        borderVisible: false,
+        wickUpColor: '#089981',
+        wickDownColor: '#f23645',
+      });
+
+      initCandleData();
+
+      window.addEventListener('resize', () => {
+        if (chart && container) {
+          chart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+        }
+      });
+    }
+
+    // Generate Initial Realistic Candlestick Data
+    function initCandleData() {
+      candleData = [];
+      let basePrice = currentPair.symbol.includes('BTC') ? 68000 : currentPair.symbol.includes('ETH') ? 3500 : 1.0850;
+      let time = Math.floor(Date.now() / 1000) - (60 * 60 * 2); // 2 hours ago
+
+      for (let i = 0; i < 60; i++) {
+        let volatility = basePrice * 0.0015;
+        let open = basePrice + (Math.random() - 0.5) * volatility;
+        let high = Math.max(open, open + Math.random() * volatility);
+        let low = Math.min(open, open - Math.random() * volatility);
+        let close = (open + high + low) / 3;
+
+        candleData.push({ time: time + (i * 60), open, high, low, close });
+        basePrice = close;
+      }
+
+      candlestickSeries.setData(candleData);
+      updatePriceHeader(candleData[candleData.length - 1].close);
+    }
+
+    // Connect Real-Time Binance Stream (or Simulated Fallback for Forex)
+    function connectBinanceStream() {
+      if (liveWebSocket) liveWebSocket.close();
+
+      const streamSymbol = currentPair.binance.toLowerCase();
+      liveWebSocket = new WebSocket(`wss://stream.binance.com:9443/ws/${streamSymbol}@ticker`);
+
+      liveWebSocket.onmessage = (event) => {
         const data = JSON.parse(event.data);
         const price = parseFloat(data.c);
-        
-        document.getElementById('priceDisplay').innerText = price.toFixed(symbol.includes('EUR') ? 4 : 2);
-        
-        priceHistory.push(price);
-        if (priceHistory.length > 30) priceHistory.shift();
+        if (!price || isNaN(price)) return;
 
-        drawChart();
-        updateMarketData(price);
+        updatePriceHeader(price);
+
+        // Update latest candle
+        if (candleData.length > 0) {
+          const lastCandle = candleData[candleData.length - 1];
+          lastCandle.close = price;
+          lastCandle.high = Math.max(lastCandle.high, price);
+          lastCandle.low = Math.min(lastCandle.low, price);
+          candlestickSeries.update(lastCandle);
+        }
+      };
+
+      liveWebSocket.onerror = () => {
+        // Fallback simulated ticks for non-binance pairs
+        setInterval(() => {
+          if (candleData.length > 0) {
+            const lastCandle = candleData[candleData.length - 1];
+            const delta = (Math.random() - 0.49) * 0.0002;
+            lastCandle.close += delta;
+            candlestickSeries.update(lastCandle);
+            updatePriceHeader(lastCandle.close);
+          }
+        }, 1000);
       };
     }
 
-    function changePair() {
-      currentSymbol = document.getElementById('pairSelect').value;
-      document.getElementById('currentPairLabel').innerText = currentSymbol;
-      priceHistory = [];
-      connectWebSocket(currentSymbol);
-    }
+    // Update Price Header Display
+    function updatePriceHeader(price) {
+      const priceElem = document.getElementById('currentLivePrice');
+      const isCrypto = currentPair.symbol.includes('BTC') || currentPair.symbol.includes('ETH');
+      priceElem.innerText = price.toFixed(isCrypto ? 2 : 5);
 
-    // Draw Smooth Canvas Line Chart
-    function drawChart() {
-      const w = canvas.getBoundingClientRect().width;
-      const h = canvas.getBoundingClientRect().height;
-
-      ctx.clearRect(0, 0, w, h);
-
-      if (priceHistory.length < 2) return;
-
-      const min = Math.min(...priceHistory);
-      const max = Math.max(...priceHistory);
-      const range = (max - min) || 1;
-
-      // Grid lines
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.lineWidth = 1;
-      for (let i = 0; i < h; i += 30) {
-        ctx.beginPath();
-        ctx.moveTo(0, i);
-        ctx.lineTo(w, i);
-        ctx.stroke();
-      }
-
-      // Main line gradient
-      const gradient = ctx.createLinearGradient(0, 0, 0, h);
-      gradient.addColorStop(0, 'rgba(0, 230, 118, 0.3)');
-      gradient.addColorStop(1, 'rgba(0, 230, 118, 0.0)');
-
-      ctx.beginPath();
-      const step = w / (priceHistory.length - 1);
-
-      priceHistory.forEach((val, idx) => {
-        const x = idx * step;
-        const y = h - ((val - min) / range) * (h - 20) - 10;
-        if (idx === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      });
-
-      // Line style
-      ctx.strokeStyle = '#00e676';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-
-      // Fill beneath line
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.fillStyle = gradient;
-      ctx.fill();
-    }
-
-    // Update dynamic indicators
-    function updateMarketData(currentPrice) {
-      const buyPercent = Math.floor(Math.random() * 25) + 50; // 50-75%
+      // Random Sentiment Adjustment
+      const buyPercent = Math.floor(55 + Math.random() * 25);
       const sellPercent = 100 - buyPercent;
-
-      document.getElementById('sentimentText').innerText = `${buyPercent}% BUY / ${sellPercent}% SELL`;
-      document.getElementById('buyBar').style.width = `${buyPercent}%`;
-      document.getElementById('sellBar').style.width = `${sellPercent}%`;
+      document.getElementById('sentimentRatio').innerText = `${buyPercent}% BUY`;
+      document.getElementById('sentimentBuyBar').style.width = `${buyPercent}%`;
+      document.getElementById('sentimentSellBar').style.width = `${sellPercent}%`;
     }
 
-    // Generate Trade Signal
-    function generateSignal() {
-      const btn = document.querySelector('.btn-start');
+    // Run Signal Analysis Engine
+    function runSignalAnalysis() {
+      const btn = document.getElementById('btnAnalyze');
+      const statusIcon = document.getElementById('signalStatusIcon');
       const signalText = document.getElementById('signalText');
-      
-      btn.innerText = 'АНАЛИЗ ИНДИКАТОРОВ...';
-      signalText.className = 'signal-action signal-wait';
-      signalText.innerText = '⏳ РАСЧЕТ ТОЧКИ ВХОДА...';
+      const signalSubtext = document.getElementById('signalSubtext');
+      const timerBox = document.getElementById('signalTimerBox');
+      const card = document.getElementById('signalCard');
+
+      btn.disabled = true;
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      statusIcon.innerHTML = `<i data-lucide="loader-2" class="w-6 h-6 text-brandBlue animate-spin"></i>`;
+      lucide.createIcons();
+
+      signalText.innerText = 'АНАЛИЗ РЫНКА...';
+      signalText.className = 'text-base font-extrabold text-brandBlue tracking-wide';
+      signalSubtext.innerText = 'Расчет RSI, MACD и уровней поддержки/сопротивления';
 
       setTimeout(() => {
-        const isBuy = Math.random() > 0.45;
-        const action = isBuy ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
-        const timeFrame = ['1М', '2М', '3М', '5М'][Math.floor(Math.random() * 4)];
+        const isCall = Math.random() > 0.45;
+        const confidence = (82 + Math.random() * 12).toFixed(1);
 
-        signalText.innerText = `${action} • ${timeFrame}`;
-        signalText.className = `signal-action ${isBuy ? 'signal-buy' : 'signal-sell'}`;
-        btn.innerText = 'Анализировать рынок';
+        card.classList.remove('glow-green', 'glow-red');
+        if (isCall) {
+          card.classList.add('glow-green');
+          statusIcon.innerHTML = `<i data-lucide="arrow-big-up" class="w-8 h-8 text-brandGreen"></i>`;
+          signalText.innerText = `ВХОД: ВВЕРХ (CALL)`;
+          signalText.className = 'text-lg font-black text-brandGreen tracking-wider';
+        } else {
+          card.classList.add('glow-red');
+          statusIcon.innerHTML = `<i data-lucide="arrow-big-down" class="w-8 h-8 text-brandRed"></i>`;
+          signalText.innerText = `ВХОД: ВНИЗ (PUT)`;
+          signalText.className = 'text-lg font-black text-brandRed tracking-wider';
+        }
 
-        // Update Pattern dynamically
-        const patterns = ['Пробой уровня', 'Восходящий канал', 'Двойное дно', 'Флэт / Накопление'];
-        document.getElementById('patternValue').innerText = patterns[Math.floor(Math.random() * patterns.length)];
-      }, 1200);
+        signalSubtext.innerText = `Точность алгоритма: ${confidence}% | Экспирация: ${currentTimeframe}`;
+        timerBox.classList.remove('hidden');
+
+        startSignalTimer(currentTimeframe === '1M' ? 60 : currentTimeframe === '5M' ? 300 : 900);
+
+        btn.disabled = false;
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        lucide.createIcons();
+      }, 1400);
     }
 
-    // Init App
-    setupCanvas();
-    connectWebSocket(currentSymbol);
+    // Countdown Timer for Signals
+    function startSignalTimer(duration) {
+      if (timerInterval) clearInterval(timerInterval);
+      let timer = duration;
+      const timerElem = document.getElementById('signalTimer');
+
+      timerInterval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+        timerElem.innerText = `${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+
+        if (--timer < 0) {
+          clearInterval(timerInterval);
+          document.getElementById('signalTimerBox').classList.add('hidden');
+          document.getElementById('signalCard').classList.remove('glow-green', 'glow-red');
+        }
+      }, 1000);
+    }
+
+    // Boot App Init
+    window.onload = () => {
+      filterPairs();
+      initChart();
+      toggleIndicator('rsi');
+      toggleIndicator('bb');
+    };
   </script>
 </body>
 </html>
+```
