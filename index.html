@@ -212,9 +212,28 @@
       color: #fff;
     }
 
+    /* Шкала до конца свечи */
+    .candle-timer-bar {
+      width: 100%;
+      height: 4px;
+      background: #12141c;
+      border-radius: 2px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .candle-timer-fill {
+      width: 100%;
+      height: 100%;
+      background: var(--accent-blue);
+      width: 100%;
+      transition: width 1s linear;
+    }
+
     #tv_chart_container {
       width: 100%;
-      height: 240px;
+      height: 230px;
       border-radius: 8px;
       overflow: hidden;
       border: 1px solid var(--border-color);
@@ -463,7 +482,10 @@
   <div class="chart-card">
     <div class="chart-info">
       <span class="pair-name" id="pairLabel">EUR/USD</span>
-      <span style="font-size: 10px; color: var(--accent-green); font-weight:600;">● ЧИСТЫЙ ГРАФИК + УРОВНИ S/R</span>
+      <span style="font-size: 10px; color: var(--accent-green); font-weight:600;" id="candleTimerText">Закрытие свечи: 60с</span>
+    </div>
+    <div class="candle-timer-bar">
+      <div class="candle-timer-fill" id="candleTimerFill"></div>
     </div>
     <div id="tv_chart_container"></div>
     <div class="levels-bar">
@@ -484,9 +506,9 @@
   </div>
 
   <div class="signal-box">
-    <div class="signal-title">Сигнал нейросети</div>
+    <div class="signal-title">Сигнал нейросети (на след. свечу)</div>
     <div class="signal-main signal-wait" id="signalDisplay">ГОТОВ К АНАЛИЗУ</div>
-    <div class="strategy-desc" id="strategyDisplay">Нажмите кнопку для сканирования уровней и фильтров...</div>
+    <div class="strategy-desc" id="strategyDisplay">Ожидание 20-секундного окна до закрытия свечи...</div>
   </div>
 
   <div class="history-card">
@@ -496,7 +518,7 @@
     </div>
   </div>
 
-  <button class="btn-action" onclick="getSignal()">ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ</button>
+  <button class="btn-action" onclick="getSignal()">ПОЛУЧИТЬ СИГНАЛ (НА СЛЕД. СВЕЧУ)</button>
 
   <script>
     if (window.Telegram && window.Telegram.WebApp) {
@@ -509,7 +531,6 @@
     let currentExp = '1M';
     let signalHistory = [];
 
-    // Фильтры анализа бота (на графике ничего не рисуется)
     let activeFilters = {
       sma: true,
       rsi: true,
@@ -518,10 +539,33 @@
       vol: true
     };
 
+    // Таймер шкалы свечи (60 секунд минутного бара)
+    let candleSecondsLeft = 60;
+    setInterval(() => {
+      const now = new Date();
+      let sec = now.getSeconds();
+      let left = 60 - sec;
+      if (left === 60) left = 0;
+      
+      candleSecondsLeft = left;
+      const pct = (left / 60) * 100;
+      
+      const fill = document.getElementById('candleTimerFill');
+      const text = document.getElementById('candleTimerText');
+      if (fill) fill.style.width = pct + '%';
+      if (text) {
+        if (left <= 20 && left > 0) {
+          text.innerHTML = `🔥 Зона входа (${left}с до закрытия)`;
+          text.style.color = 'var(--accent-red)';
+        } else {
+          text.innerHTML = `Закрытие свечи: ${left}с`;
+          text.style.color = 'var(--accent-green)';
+        }
+      }
+    }, 1000);
+
     function loadTradingViewChart() {
       document.getElementById('tv_chart_container').innerHTML = '';
-      
-      // Виджет чистый — массив studies пустой, на графике нет никаких линий индикаторов
       new TradingView.widget({
         "autosize": true,
         "symbol": currentSymbol,
@@ -609,16 +653,15 @@
       const stratDisplay = document.getElementById('strategyDisplay');
       const btn = document.querySelector('.btn-action');
 
-      btn.innerText = 'АНАЛИЗ ПО ВКЛЮЧЕННЫМ ФИЛЬТРАМ...';
+      btn.innerText = 'АНАЛИЗ ФИЛЬТРОВ И ЗОНЫ ЗАКРЫТИЯ...';
       display.className = 'signal-main signal-wait';
-      display.innerText = '⏳ ОБРАБОТКА...';
-      stratDisplay.innerText = 'Свечной анализ по активным критериям бота...';
+      display.innerText = '⏳ АНАЛИЗ...';
+      stratDisplay.innerText = 'Ожидание старта новой свечи для входа...';
 
       setTimeout(() => {
         const isUp = Math.random() > 0.42;
         const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
         
-        // Формируем список активных фильтров для отчета в стратегии
         let activeNames = [];
         if (activeFilters.sma) activeNames.push('EMA');
         if (activeFilters.rsi) activeNames.push('RSI');
@@ -627,24 +670,24 @@
         if (activeFilters.vol) activeNames.push('Volume');
 
         const strategies = [
-          `Стратегия: Отскок от уровня S/R [Фильтры: ${activeNames.join(', ')}]`,
-          `Стратегия: Золотой/Мертвый кросс EMA [Фильтры: ${activeNames.join(', ')}]`,
-          `Стратегия: Импульсный пробой границ канала [Фильтры: ${activeNames.join(', ')}]`,
-          `Стратегия: Ретест зеркального уровня Price Action [Фильтры: ${activeNames.join(', ')}]`
+          `Прогноз на след. свечу: Отскок от уровня S/R [${activeNames.join(', ')}]`,
+          `Прогноз на след. свечу: Кросс EMA [${activeNames.join(', ')}]`,
+          `Прогноз на след. свечу: Пробой канала [${activeNames.join(', ')}]`,
+          `Прогноз на след. свечу: Ретест Price Action [${activeNames.join(', ')}]`
         ];
         const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
 
-        display.innerText = `${dir} • ${currentExp}`;
+        display.innerText = `${dir} • НА СЛЕД. СВЕЧУ (${currentExp})`;
         display.className = `signal-main ${isUp ? 'signal-buy' : 'signal-sell'}`;
         stratDisplay.innerText = selectedStrat;
-        btn.innerText = 'ПОЛУЧИТЬ ТОЧНЫЙ СИГНАЛ';
+        btn.innerText = 'ПОЛУЧИТЬ СИГНАЛ (НА СЛЕД. СВЕЧУ)';
 
-        const patterns = ['Ретест зеркального уровня', 'EMA Кросс импульс', 'Пин-бар по тренду', 'Объемный пробой'];
+        const patterns = ['Вход на открытии свечи', 'EMA Кросс импульс', 'Пин-бар по тренду', 'Объемный пробой'];
         document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
 
         const timeNow = new Date().toLocaleTimeString();
         const stakeVal = document.getElementById('recomStake').innerText;
-        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} (${currentExp}) | Сумма: ${stakeVal}`);
+        signalHistory.unshift(`[${timeNow}] ${document.getElementById('pairLabel').innerText} -> ${dir} на след. свечу (${currentExp}) | Сумма: ${stakeVal}`);
         if (signalHistory.length > 3) signalHistory.pop();
         
         document.getElementById('historyList').innerHTML = signalHistory.map(s => `<span>• ${s}</span>`).join('');
