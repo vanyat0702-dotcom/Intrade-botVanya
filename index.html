@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Intrade Bar Pro Terminal</title>
+  <title>Intrade Bar Pro Terminal Live</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
@@ -202,11 +202,23 @@
       font-weight: 700;
     }
 
+    .price-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .price-value {
       font-family: monospace;
       font-size: 16px;
       font-weight: 800;
       color: var(--neon-cyan);
+    }
+
+    .price-diff {
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
     }
 
     canvas {
@@ -316,7 +328,7 @@
         <option value="GBPUSD">GBP/USD (80%)</option>
         <option value="USDJPY">USD/JPY (82%)</option>
       </optgroup>
-      <optgroup label="Crypto">
+      <optgroup label="Crypto Live">
         <option value="BTCUSDT">BTC/USDT (85%)</option>
         <option value="ETHUSDT">ETH/USDT (85%)</option>
       </optgroup>
@@ -344,10 +356,13 @@
   <div class="chart-card">
     <div class="chart-info">
       <div>
-        <span class="pair-name" id="pairLabel">EUR/USD</span>
+        <span class="pair-name" id="pairLabel">EUR/USD OTC</span>
         <span class="payout-badge" id="payoutBadge">85%</span>
       </div>
-      <div class="price-value" id="priceDisplay">1.08542</div>
+      <div class="price-container">
+        <div class="price-value" id="priceDisplay">1.08542</div>
+        <div class="price-diff" id="priceDiff" style="color: var(--neon-green);">+0.00%</div>
+      </div>
     </div>
     <canvas id="candleCanvas"></canvas>
   </div>
@@ -355,7 +370,7 @@
   <div class="grid-2">
     <div class="stat-card">
       <div class="stat-title">Паттерн рынка</div>
-      <div class="stat-val" style="color: var(--neon-cyan);" id="patternText">Бычье поглощение</div>
+      <div class="stat-val" style="color: var(--neon-cyan);" id="patternText">Флэт / Накопление</div>
     </div>
     <div class="stat-card">
       <div class="stat-title">Волатильность</div>
@@ -386,8 +401,25 @@
 
     const canvas = document.getElementById('candleCanvas');
     const ctx = canvas.getContext('2d');
+    
     let candles = [];
+    let currentAsset = 'EURUSD_OTC';
     let currentTF = '5M';
+    let basePrice = 1.0850;
+    let ws = null;
+    let liveTimer = null;
+
+    const assetConfigs = {
+      'EURUSD_OTC': { name: 'EUR/USD OTC', base: 1.0850, digits: 5, payout: '85%' },
+      'GBPUSD_OTC': { name: 'GBP/USD OTC', base: 1.2650, digits: 5, payout: '85%' },
+      'USDJPY_OTC': { name: 'USD/JPY OTC', base: 154.50, digits: 2, payout: '85%' },
+      'AUDUSD_OTC': { name: 'AUD/USD OTC', base: 0.6550, digits: 5, payout: '85%' },
+      'EURUSD': { name: 'EUR/USD', base: 1.0850, digits: 5, payout: '82%' },
+      'GBPUSD': { name: 'GBP/USD', base: 1.2650, digits: 5, payout: '80%' },
+      'USDJPY': { name: 'USD/JPY', base: 154.50, digits: 2, payout: '82%' },
+      'BTCUSDT': { name: 'BTC/USDT', base: 65000.0, digits: 2, payout: '85%', binance: 'btcusdt' },
+      'ETHUSDT': { name: 'ETH/USDT', base: 3500.0, digits: 2, payout: '85%', binance: 'ethusdt' }
+    };
 
     function initCanvas() {
       const rect = canvas.getBoundingClientRect();
@@ -396,22 +428,25 @@
       ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
     }
 
-    function generateCandles() {
+    function generateInitialCandles() {
       candles = [];
-      let basePrice = 1.0850;
-      for (let i = 0; i < 28; i++) {
-        let open = basePrice + (Math.random() - 0.48) * 0.0020;
-        let close = open + (Math.random() - 0.48) * 0.0025;
-        let high = Math.max(open, close) + Math.random() * 0.0012;
-        let low = Math.min(open, close) - Math.random() * 0.0012;
+      const conf = assetConfigs[currentAsset];
+      basePrice = conf.base;
+      let curr = basePrice;
+
+      for (let i = 0; i < 30; i++) {
+        let step = conf.digits === 2 ? 2.5 : 0.0008;
+        let open = curr;
+        let close = open + (Math.random() - 0.49) * step;
+        let high = Math.max(open, close) + Math.random() * (step * 0.5);
+        let low = Math.min(open, close) - Math.random() * (step * 0.5);
         candles.push({ open, high, low, close });
-        basePrice = close;
+        curr = close;
       }
-      const last = candles[candles.length - 1];
-      document.getElementById('priceDisplay').innerText = last.close.toFixed(5);
+      updatePriceView(curr);
     }
 
-    function drawCandles() {
+    function drawChart() {
       const w = canvas.getBoundingClientRect().width;
       const h = canvas.getBoundingClientRect().height;
       ctx.clearRect(0, 0, w, h);
@@ -424,8 +459,8 @@
       const minP = Math.min(...lows);
       const range = (maxP - minP) || 1;
 
-      // Background grid
-      ctx.strokeStyle = 'rgba(0, 240, 255, 0.04)';
+      // Grid
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.05)';
       ctx.lineWidth = 1;
       for (let y = 20; y < h; y += 35) {
         ctx.beginPath();
@@ -460,30 +495,82 @@
       });
     }
 
+    function updatePriceView(price) {
+      const conf = assetConfigs[currentAsset];
+      document.getElementById('priceDisplay').innerText = price.toFixed(conf.digits);
+      const first = candles[0].open;
+      const diff = ((price - first) / first) * 100;
+      const diffEl = document.getElementById('priceDiff');
+      diffEl.innerText = (diff >= 0 ? '+' : '') + diff.toFixed(2) + '%';
+      diffEl.style.color = diff >= 0 ? 'var(--neon-green)' : 'var(--neon-red)';
+    }
+
+    function startLiveStream() {
+      if (ws) ws.close();
+      if (liveTimer) clearInterval(liveTimer);
+
+      const conf = assetConfigs[currentAsset];
+
+      if (conf.binance) {
+        // Real Binance WebSocket
+        ws = new WebSocket(`wss://stream.binance.com:9443/ws/${conf.binance}@ticker`);
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          const price = parseFloat(data.c);
+          applyTick(price);
+        };
+      } else {
+        // Simulated Live Tick Stream for Forex / OTC
+        liveTimer = setInterval(() => {
+          const lastCandle = candles[candles.length - 1];
+          const step = conf.digits === 2 ? 0.2 : 0.00015;
+          const newPrice = lastCandle.close + (Math.random() - 0.49) * step;
+          applyTick(newPrice);
+        }, 1000);
+      }
+    }
+
+    function applyTick(price) {
+      const conf = assetConfigs[currentAsset];
+      let last = candles[candles.length - 1];
+      
+      // Update active candle
+      last.close = price;
+      if (price > last.high) last.high = price;
+      if (price < last.low) last.low = price;
+
+      updatePriceView(price);
+      drawChart();
+
+      // Spawn a new candle every 15 ticks to keep it moving live
+      if (Math.random() < 0.1) {
+        candles.push({ open: price, high: price, low: price, close: price });
+        if (candles.length > 35) candles.shift();
+      }
+    }
+
     function changeAsset() {
-      const select = document.getElementById('assetSelect');
-      const text = select.options[select.selectedIndex].text;
-      document.getElementById('pairLabel').innerText = text.split(' ')[0];
-      generateCandles();
-      drawCandles();
+      currentAsset = document.getElementById('assetSelect').value;
+      const conf = assetConfigs[currentAsset];
+      document.getElementById('pairLabel').innerText = conf.name;
+      document.getElementById('payoutBadge').innerText = conf.payout;
+      generateInitialCandles();
+      drawChart();
+      startLiveStream();
     }
 
     function setTF(tf, btn) {
       document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTF = tf;
-      generateCandles();
-      drawCandles();
+      generateInitialCandles();
+      drawChart();
     }
 
     function toggleTool(chip) {
       chip.classList.toggle('active');
       const span = chip.querySelector('span');
-      if (chip.classList.contains('active')) {
-        span.innerText = '✓';
-      } else {
-        span.innerText = '+';
-      }
+      span.innerText = chip.classList.contains('active') ? '✓' : '+';
     }
 
     function getSignal() {
@@ -506,10 +593,13 @@
       }, 1000);
     }
 
-    window.addEventListener('resize', () => { initCanvas(); drawCandles(); });
+    window.addEventListener('resize', () => { initCanvas(); drawChart(); });
+    
+    // Init
     initCanvas();
-    generateCandles();
-    drawCandles();
+    generateInitialCandles();
+    drawChart();
+    startLiveStream();
   </script>
 </body>
 </html>
