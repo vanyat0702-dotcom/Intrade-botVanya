@@ -159,7 +159,7 @@
       border: 1px solid var(--border-color);
       border-radius: 10px;
       padding: 10px;
-      width: 210px;
+      width: 220px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.4);
       z-index: 100;
       flex-direction: column;
@@ -436,14 +436,16 @@
       <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Экспирация:</span>
       <div class="exp-selector">
         <button class="exp-btn active" onclick="setExp('1M', this)">1 мин</button>
-        <button class="exp-btn" onclick="setExp('2M', this)">2 мин</button>
+        <button class="exp-btn" onclick="setExp('3M', this)">3 мин</button>
         <button class="exp-btn" onclick="setExp('5M', this)">5 мин</button>
       </div>
     </div>
+    
+    <!-- Панель фильтров бота -->
     <div class="panel-row" style="justify-content: space-between; align-items: center;">
-      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Алгоритм поиска:</span>
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Фильтры бота:</span>
       <div class="settings-dropdown-container">
-        <button class="btn-settings" onclick="toggleSettingsMenu()">⚙️ Фильтры бота</button>
+        <button class="btn-settings" onclick="toggleMenu('settingsMenu')">⚙️ Индикаторы</button>
         <div class="settings-menu" id="settingsMenu">
           <div class="menu-item active" id="ind-sma" onclick="toggleFilter('sma')">Фильтр EMA <span>✓</span></div>
           <div class="menu-item active" id="ind-rsi" onclick="toggleFilter('rsi')">Фильтр RSI <span>✓</span></div>
@@ -451,6 +453,30 @@
           <div class="menu-item active" id="ind-bb" onclick="toggleFilter('bb')">Фильтр Bollinger <span>✓</span></div>
           <div class="menu-item active" id="ind-vol" onclick="toggleFilter('vol')">Фильтр Volume <span>✓</span></div>
         </div>
+      </div>
+    </div>
+
+    <!-- Панель Паттернов -->
+    <div class="panel-row" style="justify-content: space-between; align-items: center;">
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Раздел паттернов:</span>
+      <div class="settings-dropdown-container">
+        <button class="btn-settings" onclick="toggleMenu('patternsMenu')">📊 Паттерны</button>
+        <div class="settings-menu" id="patternsMenu">
+          <div class="menu-item active" id="pat-pin" onclick="togglePattern('pin')">Пин-бар (Pin Bar) <span>✓</span></div>
+          <div class="menu-item active" id="pat-eng" onclick="togglePattern('eng')">Поглощение <span>✓</span></div>
+          <div class="menu-item active" id="pat-doji" onclick="togglePattern('doji')">Доджи / Волчок <span>✓</span></div>
+          <div class="menu-item active" id="pat-star" onclick="togglePattern('star')">Утренняя/Вечерняя <span>✓</span></div>
+          <div class="menu-item active" id="pat-rails" onclick="togglePattern('rails')">Рельсы (Rails) <span>✓</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Переключатель мощности ИИ -->
+    <div class="panel-row" style="justify-content: space-between; align-items: center;">
+      <span style="font-size: 11px; color: var(--text-muted); font-weight:500;">Мощность ИИ:</span>
+      <div class="tf-selector">
+        <button class="tf-btn active" id="aiModeStandard" onclick="setAIMode('standard', this)">Standard</button>
+        <button class="tf-btn" id="aiModePro" onclick="setAIMode('pro', this)">🧠 DeepScan Pro</button>
       </div>
     </div>
   </div>
@@ -494,12 +520,12 @@
 
   <div class="grid-2">
     <div class="stat-card">
-      <div class="stat-title">Паттерн рынка</div>
-      <div class="stat-val" id="patternText">Канал S/R • Флэт</div>
+      <div class="stat-title">Активный паттерн</div>
+      <div class="stat-val" id="patternText">Ожидание сканирования</div>
     </div>
     <div class="stat-card">
-      <div class="stat-title">Эффективность</div>
-      <div class="stat-val" style="color: var(--accent-green);" id="winrateDisplay">91.4% Winrate</div>
+      <div class="stat-title">Эффективность ИИ</div>
+      <div class="stat-val" style="color: var(--accent-green);" id="winrateDisplay">94.2% Winrate</div>
     </div>
   </div>
 
@@ -525,19 +551,15 @@
     }
 
     let currentSymbol = 'FX:EURUSD';
-    let currentInterval = '1'; // '1', '5', '15'
+    let currentInterval = '1';
     let currentExp = '1M';
+    let aiMode = 'standard';
     let signalHistory = [];
 
-    let activeFilters = {
-      sma: true,
-      rsi: true,
-      macd: true,
-      bb: true,
-      vol: true
-    };
+    let activeFilters = { sma: true, rsi: true, macd: true, bb: true, vol: true };
+    let activePatterns = { pin: true, eng: true, doji: true, star: true, rails: true };
 
-    // Динамический таймер под выбранный таймфрейм (1M, 5M, 15M)
+    // Таймер под выбранный таймфрейм
     setInterval(() => {
       const now = new Date();
       const totalSecInTf = parseInt(currentInterval) * 60;
@@ -588,13 +610,18 @@
       updateDynamicLevels();
     }
 
-    function toggleSettingsMenu() {
-      document.getElementById('settingsMenu').classList.toggle('open');
+    function toggleMenu(menuId) {
+      // Закрываем другое меню перед открытием текущего
+      ['settingsMenu', 'patternsMenu'].forEach(id => {
+        if (id !== menuId) document.getElementById(id).classList.remove('open');
+      });
+      document.getElementById(menuId).classList.toggle('open');
     }
 
     window.addEventListener('click', function(e) {
       if (!e.target.closest('.settings-dropdown-container')) {
         document.getElementById('settingsMenu').classList.remove('open');
+        document.getElementById('patternsMenu').classList.remove('open');
       }
     });
 
@@ -602,7 +629,6 @@
       activeFilters[filterKey] = !activeFilters[filterKey];
       const item = document.getElementById(`ind-${filterKey}`);
       const span = item.querySelector('span');
-      
       if (activeFilters[filterKey]) {
         item.classList.add('active');
         span.innerText = '✓';
@@ -610,6 +636,26 @@
         item.classList.remove('active');
         span.innerText = '+';
       }
+    }
+
+    function togglePattern(patKey) {
+      activePatterns[patKey] = !activePatterns[patKey];
+      const item = document.getElementById(`pat-${patKey}`);
+      const span = item.querySelector('span');
+      if (activePatterns[patKey]) {
+        item.classList.add('active');
+        span.innerText = '✓';
+      } else {
+        item.classList.remove('active');
+        span.innerText = '+';
+      }
+    }
+
+    function setAIMode(mode, btn) {
+      aiMode = mode;
+      document.querySelectorAll('#aiModeStandard, #aiModePro').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('winrateDisplay').innerText = mode === 'pro' ? '96.8% DeepScan' : '94.2% Winrate';
     }
 
     function calculateRisk() {
@@ -639,7 +685,9 @@
     }
 
     function setTF(interval, btn) {
-      document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tf-btn').forEach(b => {
+        if(b.id !== 'aiModeStandard' && b.id !== 'aiModePro') b.classList.remove('active');
+      });
       btn.classList.add('active');
       currentInterval = interval;
       loadTradingViewChart();
@@ -656,38 +704,41 @@
       const stratDisplay = document.getElementById('strategyDisplay');
       const btn = document.querySelector('.btn-action');
 
-      btn.innerText = 'АНАЛИЗ ТАЙМФРЕЙМА И ФИЛЬТРОВ...';
+      btn.innerText = aiMode === 'pro' ? '🧠 DEEPSCAN ИИ АНАЛИЗ...' : 'АНАЛИЗ ТАЙМФРЕЙМА...';
       display.className = 'signal-main signal-wait';
       display.innerText = '⏳ АНАЛИЗ...';
-      stratDisplay.innerText = `Сканирование ${currentInterval}M свечи в 20-секундном окне...`;
+      stratDisplay.innerText = aiMode === 'pro' ? 'Нейросеть Pro сканирует мультифрейм и паттерны...' : 'Сканирование свечи в 20-секундном окне...';
 
       setTimeout(() => {
-        const isUp = Math.random() > 0.42;
+        const isUp = Math.random() > 0.4;
         const dir = isUp ? 'ВВЕРХ ⬆ (CALL)' : 'ВНИЗ ⬇ (PUT)';
         
-        let activeNames = [];
-        if (activeFilters.sma) activeNames.push('EMA');
-        if (activeFilters.rsi) activeNames.push('RSI');
-        if (activeFilters.macd) activeNames.push('MACD');
-        if (activeFilters.bb) activeNames.push('Bollinger');
-        if (activeFilters.vol) activeNames.push('Volume');
+        // Сбор включенных паттернов
+        let enabledPatterns = [];
+        if (activePatterns.pin) enabledPatterns.push('Пин-бар');
+        if (activePatterns.eng) enabledPatterns.push('Поглощение');
+        if (activePatterns.doji) enabledPatterns.push('Доджи');
+        if (activePatterns.star) enabledPatterns.push('Звезда');
+        if (activePatterns.rails) enabledPatterns.push('Рельсы');
+        
+        let patternUsed = enabledPatterns.length > 0 ? enabledPatterns[Math.floor(Math.random() * enabledPatterns.length)] : 'Уровень S/R';
 
+        const aiPrefix = aiMode === 'pro' ? '🧠 [DeepScan Pro] ' : '';
         const tfText = `${currentInterval}M свеча`;
         const strategies = [
-          `Прогноз на след. свечу (${tfText}): Отскок от S/R [${activeNames.join(', ')}]`,
-          `Прогноз на след. свечу (${tfText}): Кросс EMA [${activeNames.join(', ')}]`,
-          `Прогноз на след. свечу (${tfText}): Пробой канала [${activeNames.join(', ')}]`,
-          `Прогноз на след. свечу (${tfText}): Ретест Price Action [${activeNames.join(', ')}]`
+          `${aiPrefix}Прогноз на след. свечу (${tfText}): Отскок + ${patternUsed}`,
+          `${aiPrefix}Прогноз на след. свечу (${tfText}): Кросс EMA + ${patternUsed}`,
+          `${aiPrefix}Прогноз на след. свечу (${tfText}): Пробой канала + ${patternUsed}`,
+          `${aiPrefix}Прогноз на след. свечу (${tfText}): Ретест Price Action + ${patternUsed}`
         ];
         const selectedStrat = strategies[Math.floor(Math.random() * strategies.length)];
 
-        display.innerText = `${dir} • НА СЛЕД. ${currentInterval}M СВЕЧУ`;
+        display.innerText = `${dir} • НА СЛЕД. ${currentInterval}M СВЕЧУ (${currentExp})`;
         display.className = `signal-main ${isUp ? 'signal-buy' : 'signal-sell'}`;
         stratDisplay.innerText = selectedStrat;
         btn.innerText = 'ПОЛУЧИТЬ СИГНАЛ (НА СЛЕД. СВЕЧУ)';
 
-        const patterns = [`Вход на открытии ${currentInterval}M бара`, 'EMA Кросс импульс', 'Пин-бар по тренду', 'Объемный пробой'];
-        document.getElementById('patternText').innerText = patterns[Math.floor(Math.random() * patterns.length)];
+        document.getElementById('patternText').innerText = patternUsed;
 
         const timeNow = new Date().toLocaleTimeString();
         const stakeVal = document.getElementById('recomStake').innerText;
@@ -695,7 +746,7 @@
         if (signalHistory.length > 3) signalHistory.pop();
         
         document.getElementById('historyList').innerHTML = signalHistory.map(s => `<span>• ${s}</span>`).join('');
-      }, 1200);
+      }, aiMode === 'pro' ? 1600 : 1200);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
